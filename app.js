@@ -21,7 +21,7 @@ function calcola() {
         15000:  { 12: 0.081433, 18: 0.058341, 24: 0.045535, 36: 0.032207, 48: 0.025213, 60: 0.021074 },
         25000:  { 12: 0.081280, 18: 0.058195, 24: 0.045392, 36: 0.032065, 48: 0.025068, 60: 0.020926 },
         50000:  { 12: 0.080770, 18: 0.057710, 24: 0.044915, 36: 0.031592, 48: 0.024588, 60: 0.020437 },
-        100000: { 12: 0.080744, 18: 0.057686, 24: 0.044891, 36: 0.031568, 48: 0.024564, 60: 0.020413 }
+        100000:{ 12: 0.080744, 18: 0.057686, 24: 0.044891, 36: 0.031568, 48: 0.024564, 60: 0.020413 }
     };
 
     for (let maxImporto in coefficienti) {
@@ -61,7 +61,7 @@ function calcolaCanoniPerDurate(importo) {
         15000:  { 12: 0.081433, 18: 0.058341, 24: 0.045535, 36: 0.032207, 48: 0.025213, 60: 0.021074 },
         25000:  { 12: 0.081280, 18: 0.058195, 24: 0.045392, 36: 0.032065, 48: 0.025068, 60: 0.020926 },
         50000:  { 12: 0.080770, 18: 0.057710, 24: 0.044915, 36: 0.031592, 48: 0.024588, 60: 0.020437 },
-        100000: { 12: 0.080744, 18: 0.057686, 24: 0.044891, 36: 0.031568, 48: 0.024564, 60: 0.020413 }
+        100000:{ 12: 0.080744, 18: 0.057686, 24: 0.044891, 36: 0.031568, 48: 0.024564, 60: 0.020413 }
     };
 
     let fascia = null;
@@ -95,11 +95,17 @@ function generaPDF() {
         return;
     }
 
+    // Controllo che jsPDF sia caricato
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("Impossibile generare il PDF.\nLa libreria jsPDF non è stata caricata.\n\nControlla la connessione internet e ricarica la pagina (CTRL+F5).");
+        return;
+    }
+
     const canoni = calcolaCanoniPerDurate(importo);
     const speseContratto = calcolaSpeseContratto(importo);
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    // Creazione istanza jsPDF dall'UMD
+    const doc = new window.jspdf.jsPDF();
 
     let y = 10;
 
