@@ -1,11 +1,12 @@
 /* service-worker.js */
-const CACHE_NAME = "noleggio-cache-v1";
+const CACHE_NAME = "noleggio-cache-v2";
 const urlsToCache = [
     "./",
     "./index.html",
     "./style.css",
     "./app.js",
     "./manifest.json",
+    "./libs/jspdf.umd.min.js",
     "./icons/icons_crm-192x192.png",
     "./icons/icons_crm-512x512.png"
 ];
