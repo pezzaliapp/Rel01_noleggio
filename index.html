@@ -15,13 +15,16 @@
         <h1>Calcolo Noleggio</h1>
         <button id="darkModeToggle">🌙 Modalità Scura</button>
     </header>
+
     <main>
         <div class="noleggio-container">
             <h1>Simulatore Calcolo Canoni Locazione</h1>
+
             <div class="input-group">
                 <label for="importo">Inserisci importo:</label>
-                <input type="text" id="importo" placeholder="Inserisci importo" />
+                <input type="text" id="importo" placeholder="Inserisci importo" autocomplete="off" />
             </div>
+
             <div class="input-group">
                 <label for="durata">Durata:</label>
                 <select id="durata">
@@ -33,7 +36,9 @@
                     <option value="60">60 mesi</option>
                 </select>
             </div>
+
             <button class="button" onclick="calcola()">Calcola</button>
+
             <div class="results">
                 <p>Rata mensile: <span id="rataMensile">0,00 €</span></p>
                 <p>Spese di contratto: <span id="speseContratto">0,00 €</span></p>
@@ -41,19 +46,24 @@
                 <p>Costo orario: <span id="costoOrario">0,00 €</span></p>
             </div>
 
-            <!-- NUOVO BOTTONE PER PDF -->
+            <!-- Bottone per la generazione del PDF -->
             <button class="button print-button" onclick="generaPDF()">
                 Stampa preventivo PDF
             </button>
         </div>
     </main>
+
     <footer>
         <p>&copy; Copyright (c) 2025 Alessandro Pezzali</p>
     </footer>
 
-    <!-- jsPDF da CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-v2kVRa4BbnlHj3zA8HbTjvEI7I+griXdwA+wbYVZdgTjJf2tcWmS3rzNRybBM5uUvxWp5v+iKTLVxA1oH9Q+Ug==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- jsPDF da CDN (deve venire prima di app.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+            integrity="sha512-v2kVRa4BbnlHj3zA8HbTjvEI7I+griXdwA+wbYVZdgTjJf2tcWmS3rzNRybBM5uUvxWp5v+iKTLVxA1oH9Q+Ug=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
 
+    <!-- Logica dell'app -->
     <script src="app.js"></script>
 </body>
 </html>
