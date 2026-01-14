@@ -1,4 +1,3 @@
-<!-- index.html (AGGIORNATO) -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -7,7 +6,7 @@
   <meta name="theme-color" content="#007bff">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" sizes="192x192" href="icons/icons_crm-192x192.png">
-  <link rel="icon" sizes نشان="512x512" href="icons/icons_crm-512x512.png">
+  <link rel="icon" sizes="512x512" href="icons/icons_crm-512x512.png">
   <link rel="stylesheet" href="style.css">
   <title>Calcolo Noleggio</title>
 
@@ -64,22 +63,7 @@
         <p>Costo orario: <span id="costoOrario">0,00 €</span></p>
       </div>
 
-      <!-- BOX BCC / NOTE TECNICHE (NUOVO) -->
-      <div class="bcc-box" id="bccBox" aria-live="polite">
-        <div class="bcc-title">✅ Calcolo allineato al simulatore BCC</div>
-        <div class="bcc-note">
-          Calcolo allineato al simulatore BCC <span>(scostamenti minimi dovuti ad arrotondamenti Excel)</span>
-        </div>
-
-        <!-- Questi 3 campi vengono riempiti da app.js -->
-        <div class="bcc-lines">
-          <div>Fascia applicata: <b><span id="fasciaApplicata">—</span></b></div>
-          <div>Valore di riacquisto (VR): <b><span id="vrLabel">—</span></b></div>
-          <div>Importo finanziato: <b><span id="importoFinanziato">—</span></b></div>
-        </div>
-      </div>
-
-      <!-- Bottone TXT -->
+      <!-- Bottone per la generazione del TXT -->
       <button class="button print-button" type="button" onclick="generaTXT()">
         Scarica preventivo TXT
       </button>
@@ -87,12 +71,13 @@
   </main>
 
   <footer>
-    <p>
-      &copy; Copyright (c) 2025 Alessandro Pezzali
-      <span class="app-release">Release 01 · Gennaio 2026</span>
-    </p>
-  </footer>
+  <p>
+    &copy; Copyright (c) 2025 Alessandro Pezzali
+    <span class="app-release">Release 01 · Gennaio 2026</span>
+  </p>
+</footer>
 
+  <!-- Logica dell'app -->
   <script src="app.js"></script>
 </body>
 </html>
