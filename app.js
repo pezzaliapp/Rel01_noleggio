@@ -2,6 +2,8 @@
    Rel01_noleggio — app.js (pulito / variabili rinominate)
    - Calcolo allineato a simulatore BCC (tabella coefficienti + fasce)
    - UI: fascia applicata, VR (valore riacquisto), importo finanziato, badge
+   - Nota tecnica in UI + in TXT:
+     “Calcolo allineato al simulatore BCC (scostamenti minimi dovuti ad arrotondamenti Excel)”
    ========================================================= */
 
 (function () {
@@ -33,6 +35,9 @@
 
   const STORAGE_KEY_DARKMODE = "darkMode";
 
+  // Nota tecnica richiesta (UI + TXT)
+  const NOTA_BCC = "Calcolo allineato al simulatore BCC (scostamenti minimi dovuti ad arrotondamenti Excel)";
+
   // ---------- UTILS ----------
   function $(id) {
     return document.getElementById(id);
@@ -49,7 +54,7 @@
     let v = String(raw)
       .replace(/€/g, "")
       .replace(/\s/g, "")
-      .replace(/\./g, "")   // rimuove separatore migliaia
+      .replace(/\./g, "")   // separatore migliaia
       .replace(",", ".");   // virgola -> punto decimale
     const parsed = parseFloat(v);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -77,7 +82,8 @@
     if (importo < 50001) return 225;
     return 300;
   }
-   function getBandLimitForImporto(importo) {
+
+  function getBandLimitForImporto(importo) {
     // prende la prima fascia "fino a" >= importo
     const bands = Object.keys(BCC_COEFFICIENTS_BY_BAND)
       .map(Number)
@@ -118,7 +124,7 @@
 
     wrap.innerHTML = `
       <p style="margin:0 0 8px 0;">
-        <b id="bccBadge">✅ Calcolo allineato a simulatore BCC</b>
+        <b id="bccBadge">✅ ${NOTA_BCC}</b>
       </p>
       <p style="margin:0;">Fascia applicata: <b><span id="fasciaApplicata">—</span></b></p>
       <p style="margin:0;">Valore di riacquisto (VR): <b><span id="vrPerc">—</span>%</b> — <b><span id="vrEuro">—</span> €</b></p>
@@ -194,6 +200,7 @@
 
     return { canoni: result, bandLimit: bandLimit };
   }
+
   function generaTXT() {
     ensureExtraUI();
 
@@ -210,16 +217,29 @@
 
     const { canoni, bandLimit } = calcolaCanoniPerDurate(imponibile);
 
+    const rataInfo = getRataMensile(imponibile, durataMesi);
+    const rataMensile = rataInfo.rata;
+    const costoGiornaliero = round2(rataMensile / 22);
+    const costoOrario = round2(costoGiornaliero / 8);
+
     const vr = getVR(imponibile, durataMesi);
     const importoFinanziato = round2(imponibile - vr.valore);
 
     let testo = "";
     testo += "PREVENTIVO DI NOLEGGIO OPERATIVO BCC (simulazione)\n";
     testo += "---------------------------------------------------\n\n";
+
+    testo += `${NOTA_BCC}\n\n`;
+
     testo += `Imponibile fornitura: ${formatEUR(imponibile)} €\n`;
     testo += `Fascia applicata (fino a): ${formatEUR(bandLimit)} €\n\n`;
 
     testo += `Durata selezionata: ${durataMesi} mesi\n`;
+    testo += `Rata mensile: ${formatEUR(rataMensile)} €\n`;
+    testo += `Spese di contratto: ${formatEUR(speseContratto)} €\n`;
+    testo += `Costo giornaliero: ${formatEUR(costoGiornaliero)} €\n`;
+    testo += `Costo orario: ${formatEUR(costoOrario)} €\n\n`;
+
     testo += `Valore di riacquisto (VR): ${formatEUR(vr.perc)}% = ${formatEUR(vr.valore)} €\n`;
     testo += `Importo finanziato (imponibile - VR): ${formatEUR(importoFinanziato)} €\n\n`;
 
@@ -229,14 +249,9 @@
     });
 
     testo += "\nDETTAGLI CONTRATTUALI:\n";
-    testo += `Spese di contratto: ${formatEUR(speseContratto)} €\n`;
     testo += "Spese incasso RID: 4,00 € al mese\n\n";
 
-    testo += "NOTE:\n";
-    testo += "- Calcolo basato su coefficienti BCC per fasce importi e durata.\n";
-    testo += "- I valori possono variare in base a condizioni commerciali/istruttoria.\n";
-
-    const blob = new Blob([testo], { type: "text/plain" });
+    const blob = new Blob([testo], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
