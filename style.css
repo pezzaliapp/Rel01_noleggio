@@ -61,13 +61,45 @@ button:hover {
     margin: 0.5em 0;
 }
 
-/* Footer styling */
+/* Footer styling (PRO + release) */
 footer {
-    text-align: center;
     padding: 1em;
     background-color: #f4f4f9;
     position: relative;
     bottom: 0;
+}
+
+footer p {
+    margin: 0;
+    display: flex;
+    justify-content: center; /* fallback */
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Release badge piccolo e non invasivo */
+.app-release {
+    font-size: 0.78rem;
+    color: #999;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    padding: 2px 8px;
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.6);
+}
+
+/* Se vuoi che su schermi larghi vada a destra (più “enterprise”) */
+@media (min-width: 520px) {
+    footer p {
+        justify-content: space-between;
+        max-width: 500px;
+        margin: 0 auto;
+    }
 }
 
 /* Dark mode styling */
@@ -81,6 +113,13 @@ body.dark-mode .noleggio-container {
     color: white;
 }
 
+body.dark-mode input,
+body.dark-mode select {
+    background-color: #222;
+    color: white;
+    border-color: #444;
+}
+
 body.dark-mode button {
     background-color: #444;
     color: white;
@@ -88,4 +127,18 @@ body.dark-mode button {
 
 body.dark-mode button:hover {
     background-color: #222;
+}
+
+body.dark-mode footer {
+    background-color: #1e1e1e;
+}
+
+body.dark-mode footer p {
+    color: #bdbdbd;
+}
+
+body.dark-mode .app-release {
+    color: #cfcfcf;
+    border-color: rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.25);
 }
