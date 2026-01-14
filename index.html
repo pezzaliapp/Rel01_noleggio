@@ -1,75 +1,80 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#007bff">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" sizes="192x192" href="icons/icons_crm-192x192.png">
-    <link rel="icon" sizes="512x512" href="icons/icons_crm-512x512.png">
-    <link rel="stylesheet" href="style.css">
-    <title>Calcolo Noleggio</title>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-ETKJKTB8LK"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#007bff">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" sizes="192x192" href="icons/icons_crm-192x192.png">
+  <link rel="icon" sizes="512x512" href="icons/icons_crm-512x512.png">
+  <link rel="stylesheet" href="style.css">
+  <title>Calcolo Noleggio</title>
 
-  gtag('config', 'G-ETKJKTB8LK');
-</script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ETKJKTB8LK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-ETKJKTB8LK');
+  </script>
 </head>
+
 <body>
-    <header>
-        <h1>Calcolo Noleggio</h1>
-        <button id="darkModeToggle">🌙 Modalità Scura</button>
-    </header>
+  <header>
+    <h1>Calcolo Noleggio</h1>
+    <button id="darkModeToggle" type="button">🌙 Modalità Scura</button>
+  </header>
 
-    <main>
-        <div class="noleggio-container">
-            <h1>Simulatore Calcolo Canoni Locazione</h1>
+  <main>
+    <div class="noleggio-container">
+      <h2>Simulatore Calcolo Canoni Locazione</h2>
 
-            <div class="input-group">
-                <label for="importo">Inserisci importo:</label>
-                <input type="text" id="importo" placeholder="Inserisci importo" autocomplete="off" />
-            </div>
+      <div class="input-group">
+        <label for="importo">Inserisci importo:</label>
+        <input
+          type="text"
+          id="importo"
+          placeholder="Inserisci importo"
+          autocomplete="off"
+          inputmode="decimal"
+          enterkeyhint="done"
+        />
+      </div>
 
-            <div class="input-group">
-                <label for="durata">Durata:</label>
-                <select id="durata">
-                    <option value="12">12 mesi</option>
-                    <option value="18">18 mesi</option>
-                    <option value="24" selected>24 mesi</option>
-                    <option value="36">36 mesi</option>
-                    <option value="48">48 mesi</option>
-                    <option value="60">60 mesi</option>
-                </select>
-            </div>
+      <div class="input-group">
+        <label for="durata">Durata:</label>
+        <select id="durata">
+          <option value="12">12 mesi</option>
+          <option value="18">18 mesi</option>
+          <option value="24" selected>24 mesi</option>
+          <option value="36">36 mesi</option>
+          <option value="48">48 mesi</option>
+          <option value="60">60 mesi</option>
+        </select>
+      </div>
 
-            <button class="button" onclick="calcola()">Calcola</button>
+      <button class="button" type="button" onclick="calcola()">Calcola</button>
 
-            <div class="results">
-                <p>Rata mensile: <span id="rataMensile">0,00 €</span></p>
-                <p>Spese di contratto: <span id="speseContratto">0,00 €</span></p>
-                <p>Costo giornaliero: <span id="costoGiornaliero">0,00 €</span></p>
-                <p>Costo orario: <span id="costoOrario">0,00 €</span></p>
-            </div>
+      <div class="results">
+        <p>Rata mensile: <span id="rataMensile">0,00 €</span></p>
+        <p>Spese di contratto: <span id="speseContratto">0,00 €</span></p>
+        <p>Costo giornaliero: <span id="costoGiornaliero">0,00 €</span></p>
+        <p>Costo orario: <span id="costoOrario">0,00 €</span></p>
+      </div>
 
-            <!-- Bottone per la generazione del PDF -->
-            <button class="button print-button" onclick="generaTXT()">
-    Scarica preventivo TXT
-</button>
-        </div>
-    </main>
+      <!-- Bottone per la generazione del TXT -->
+      <button class="button print-button" type="button" onclick="generaTXT()">
+        Scarica preventivo TXT
+      </button>
+    </div>
+  </main>
 
-    <footer>
-        <p>&copy; Copyright (c) 2025 Alessandro Pezzali</p>
-    </footer>
+  <footer>
+    <p>&copy; Copyright (c) 2025 Alessandro Pezzali</p>
+  </footer>
 
-    <!-- jsPDF LOCALE -->
-    <script src="libs/jspdf.umd.min.js"></script>
-
-    <!-- Logica dell'app -->
-    <script src="app.js"></script>
+  <!-- Logica dell'app -->
+  <script src="app.js"></script>
 </body>
 </html>
