@@ -1,204 +1,286 @@
-/* ============================
-   Rel01_noleggio — app.js
-   Simulatore Canoni Locazione (BCC)
-   ============================ */
+/* =========================================================
+   Rel01_noleggio — app.js (pulito / variabili rinominate)
+   - Calcolo allineato a simulatore BCC (tabella coefficienti + fasce)
+   - UI: fascia applicata, VR (valore riacquisto), importo finanziato, badge
+   ========================================================= */
 
-// --- COEFFICIENTI BCC (canone = imponibile * coeff) ---
-const BCC_COEFFICIENTS = {
-  5000:   { 12: 0.081123, 18: 0.058239, 24: 0.045554, 36: 0.032359, 48: 0.025445, 60: 0.021358 },
-  15000:  { 12: 0.081433, 18: 0.058341, 24: 0.045535, 36: 0.032207, 48: 0.025213, 60: 0.021074 },
-  25000:  { 12: 0.081280, 18: 0.058195, 24: 0.045392, 36: 0.032065, 48: 0.025068, 60: 0.020926 }, // ✅ corretta
-  50000:  { 12: 0.080770, 18: 0.057710, 24: 0.044915, 36: 0.031592, 48: 0.024588, 60: 0.020437 },
-  100000: { 12: 0.080744, 18: 0.057686, 24: 0.044891, 36: 0.031568, 48: 0.024564, 60: 0.020413 }
-};
+(function () {
+  "use strict";
 
-const BCC_BANDS = Object.keys(BCC_COEFFICIENTS).map(Number).sort((a, b) => a - b);
-const VALID_DURATIONS = [12, 18, 24, 36, 48, 60];
+  // ---------- COSTANTI BCC ----------
+  const DURATE_MESI = [12, 18, 24, 36, 48, 60];
 
-// ---------- UI helpers ----------
-function $(id){ return document.getElementById(id); }
-function setText(id, text){ const el = $(id); if (el) el.textContent = text; }
-function round2(x){
-  const n = (typeof x === "number") ? x : parseFloat(x);
-  if (isNaN(n)) return 0;
-  return Math.round(n * 100) / 100;
-}
+  // VR% per durata (come tua tabella: 10,5,3,1,1,1)
+  const VR_PERCENT_BY_DURATION = {
+    12: 10,
+    18: 5,
+    24: 3,
+    36: 1,
+    48: 1,
+    60: 1
+  };
 
-// ---------- parsing / formatting ----------
-function parseEuropeanFloat(value) {
-  if (value == null) return 0;
+  // Coefficienti BCC (percentuali convertite in decimali)
+  // Fasce IMPORTI (fino a): 5k, 15k, 25k, 50k, 100k, 999999
+  const BCC_COEFFICIENTS_BY_BAND = {
+    5000:   { 12: 0.08112, 18: 0.05824, 24: 0.04555, 36: 0.03236, 48: 0.02544, 60: 0.02136 },
+    15000:  { 12: 0.08143, 18: 0.05834, 24: 0.04554, 36: 0.03221, 48: 0.02521, 60: 0.02107 },
+    25000:  { 12: 0.08128, 18: 0.05820, 24: 0.04539, 36: 0.03206, 48: 0.02507, 60: 0.02093 },
+    50000:  { 12: 0.08077, 18: 0.05771, 24: 0.04492, 36: 0.03159, 48: 0.02459, 60: 0.02044 },
+    100000: { 12: 0.08074, 18: 0.05769, 24: 0.04489, 36: 0.03157, 48: 0.02456, 60: 0.02041 },
+    999999: { 12: 0.07978, 18: 0.05696, 24: 0.04430, 36: 0.03111, 48: 0.02418, 60: 0.02007 }
+  };
 
-  // accetta: "18.381,00", "18381,00 €", "18381", "18 381,00"
-  let s = String(value)
-    .replace(/€/g, "")
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
+  const STORAGE_KEY_DARKMODE = "darkMode";
 
-  const parsed = parseFloat(s);
-  return isNaN(parsed) ? 0 : parsed;
-}
-
-function formatNumber(value) {
-  const num = (typeof value === "number") ? value : parseFloat(value);
-  const safe = isNaN(num) ? 0 : num;
-  return safe.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-// ---------- logica BCC ----------
-function calcolaSpeseContratto(importo) {
-  importo = parseEuropeanFloat(importo);
-  if (importo < 5001) return 75;
-  if (importo < 10001) return 100;
-  if (importo < 25001) return 150;
-  if (importo < 50001) return 225;
-  return 300;
-}
-
-function getFascia(importo) {
-  importo = parseEuropeanFloat(importo);
-  for (const maxImporto of BCC_BANDS) {
-    if (importo <= maxImporto) return maxImporto;
-  }
-  return BCC_BANDS[BCC_BANDS.length - 1]; // 100000
-}
-
-function calcolaCanoniPerDurate(importo) {
-  importo = parseEuropeanFloat(importo);
-  const fascia = getFascia(importo);
-
-  const result = {};
-  for (const mesi of VALID_DURATIONS) {
-    result[mesi] = round2(importo * BCC_COEFFICIENTS[fascia][mesi]);
-  }
-  return result;
-}
-
-// ---------- calcolo principale (bottone + auto) ----------
-function calcola() {
-  const importoEl = $("importo");
-  const durataEl = $("durata");
-  if (!importoEl || !durataEl) return;
-
-  const importo = parseEuropeanFloat(importoEl.value);
-  const durata = parseInt(durataEl.value, 10);
-
-  if (!importo || isNaN(importo)) {
-    alert("Per favore, inserisci un importo valido.");
-    return;
-  }
-  if (!VALID_DURATIONS.includes(durata)) {
-    alert("Durata non valida.");
-    return;
+  // ---------- UTILS ----------
+  function $(id) {
+    return document.getElementById(id);
   }
 
-  const fascia = getFascia(importo);
-  let rataMensile = importo * BCC_COEFFICIENTS[fascia][durata];
-  rataMensile = round2(rataMensile);
-
-  const speseContratto = calcolaSpeseContratto(importo);
-
-  setText("rataMensile", formatNumber(rataMensile) + " €");
-  setText("speseContratto", formatNumber(speseContratto) + " €");
-
-  const costoGiornaliero = round2(rataMensile / 22);
-  const costoOrario = round2(costoGiornaliero / 8);
-
-  setText("costoGiornaliero", formatNumber(costoGiornaliero) + " €");
-  setText("costoOrario", formatNumber(costoOrario) + " €");
-}
-
-// ---------- TXT ----------
-function generaTXT() {
-  const importoEl = $("importo");
-  if (!importoEl) return;
-
-  const importo = parseEuropeanFloat(importoEl.value);
-  if (!importo || isNaN(importo)) {
-    alert("Inserisci un importo valido prima di generare il file TXT.");
-    return;
+  function round2(value) {
+    const n = Number(value);
+    return Math.round(n * 100) / 100;
   }
 
-  const canoni = calcolaCanoniPerDurate(importo);
-  const speseContratto = calcolaSpeseContratto(importo);
-
-  let testo = "";
-  testo += "PREVENTIVO DI NOLEGGIO OPERATIVO BCC\n";
-  testo += "--------------------------------------\n\n";
-  testo += `Importo (imponibile): ${formatNumber(importo)} €\n\n`;
-
-  testo += "CANONI MENSILI DISPONIBILI:\n";
-  for (const mesi of VALID_DURATIONS) {
-    testo += `${mesi} mesi: ${formatNumber(canoni[mesi])} €\n`;
+  // "18.381,00 €" -> 18381
+  function parseEuropeanFloat(raw) {
+    if (!raw) return 0;
+    let v = String(raw)
+      .replace(/€/g, "")
+      .replace(/\s/g, "")
+      .replace(/\./g, "")   // rimuove separatore migliaia
+      .replace(",", ".");   // virgola -> punto decimale
+    const parsed = parseFloat(v);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  testo += "\n\nDETTAGLI CONTRATTUALI:\n";
-  testo += `Spese di contratto: ${formatNumber(speseContratto)} €\n`;
-  testo += "Spese incasso RID: 4,00 € al mese\n\n";
-
-  testo += "BENEFICI FISCALI:\n";
-  testo += "- Canone interamente deducibile.\n";
-  testo += "- Il bene non entra nei cespiti.\n";
-  testo += "- Nessuna incidenza su IRAP.\n\n";
-
-  testo += "BENEFICI FINANZIARI:\n";
-  testo += "- Non è un finanziamento.\n";
-  testo += "- Non impegna le linee di credito.\n";
-  testo += "- Non è un bene da ammortizzare.\n\n";
-
-  const blob = new Blob([testo], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `preventivo_noleggio_${Math.round(importo)}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  URL.revokeObjectURL(url);
-}
-
-// ---------- Dark mode + auto-calc ----------
-document.addEventListener("DOMContentLoaded", () => {
-  // Dark mode restore
-  const saved = localStorage.getItem("darkMode");
-  if (saved && JSON.parse(saved) === true) {
-    document.body.classList.add("dark-mode");
+  function formatEUR(value) {
+    const n = Number(value) || 0;
+    try {
+      return n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch (e) {
+      return String(round2(n)).replace(".", ",");
+    }
   }
 
-  // Dark mode toggle (safe)
-  const toggle = $("darkModeToggle");
-  if (toggle) {
-    toggle.addEventListener("click", () => {
-      document.body.classList.toggle("dark-mode");
-      localStorage.setItem("darkMode", JSON.stringify(document.body.classList.contains("dark-mode")));
+  function safeFileNumber(value) {
+    // per nome file (niente virgole/spazi)
+    const n = Math.round(Number(value) || 0);
+    return String(n);
+  }
+
+  function getSpeseContratto(importo) {
+    if (importo < 5001) return 75;
+    if (importo < 10001) return 100;
+    if (importo < 25001) return 150;
+    if (importo < 50001) return 225;
+    return 300;
+  }
+   function getBandLimitForImporto(importo) {
+    // prende la prima fascia "fino a" >= importo
+    const bands = Object.keys(BCC_COEFFICIENTS_BY_BAND)
+      .map(Number)
+      .sort((a, b) => a - b);
+
+    for (let i = 0; i < bands.length; i++) {
+      if (importo <= bands[i]) return bands[i];
+    }
+    return bands[bands.length - 1];
+  }
+
+  function getRataMensile(importo, durataMesi) {
+    const bandLimit = getBandLimitForImporto(importo);
+    const coeff = BCC_COEFFICIENTS_BY_BAND[bandLimit] && BCC_COEFFICIENTS_BY_BAND[bandLimit][durataMesi];
+    const rata = coeff ? (importo * coeff) : 0;
+    return { rata: round2(rata), bandLimit: bandLimit, coeff: coeff || 0 };
+  }
+
+  function getVR(importo, durataMesi) {
+    const perc = VR_PERCENT_BY_DURATION[durataMesi] || 0;
+    const valore = round2(importo * (perc / 100));
+    return { perc: perc, valore: valore };
+  }
+
+  function ensureExtraUI() {
+    // Se non esiste già, aggiunge un blocco sotto ".results"
+    const resultsBox = document.querySelector(".results");
+    if (!resultsBox) return;
+
+    if ($("bccBadge")) return; // già creato
+
+    const wrap = document.createElement("div");
+    wrap.style.marginTop = "12px";
+    wrap.style.padding = "10px";
+    wrap.style.border = "1px solid rgba(0,0,0,.12)";
+    wrap.style.borderRadius = "10px";
+    wrap.style.background = "rgba(0,0,0,.03)";
+
+    wrap.innerHTML = `
+      <p style="margin:0 0 8px 0;">
+        <b id="bccBadge">✅ Calcolo allineato a simulatore BCC</b>
+      </p>
+      <p style="margin:0;">Fascia applicata: <b><span id="fasciaApplicata">—</span></b></p>
+      <p style="margin:0;">Valore di riacquisto (VR): <b><span id="vrPerc">—</span>%</b> — <b><span id="vrEuro">—</span> €</b></p>
+      <p style="margin:0;">Importo finanziato: <b><span id="importoFinanziato">—</span> €</b></p>
+    `;
+
+    resultsBox.appendChild(wrap);
+  }
+
+  function updateExtraUI(params) {
+    // params: { bandLimit, vrPerc, vrEuro, importoFinanziato }
+    if ($("fasciaApplicata")) $("fasciaApplicata").textContent = formatEUR(params.bandLimit);
+    if ($("vrPerc")) $("vrPerc").textContent = formatEUR(params.vrPerc);
+    if ($("vrEuro")) $("vrEuro").textContent = formatEUR(params.vrEuro);
+    if ($("importoFinanziato")) $("importoFinanziato").textContent = formatEUR(params.importoFinanziato);
+  }
+
+  // ---------- AZIONI UI ----------
+  function calcola() {
+    ensureExtraUI();
+
+    const importoRaw = $("importo") ? $("importo").value : "";
+    const imponibile = parseEuropeanFloat(importoRaw);
+
+    if (!imponibile || imponibile <= 0) {
+      alert("Per favore, inserisci un importo valido.");
+      return;
+    }
+
+    const durataMesi = parseInt($("durata") ? $("durata").value : "24", 10) || 24;
+
+    // Validazione durata
+    if (DURATE_MESI.indexOf(durataMesi) === -1) {
+      alert("Durata non valida.");
+      return;
+    }
+
+    const speseContratto = getSpeseContratto(imponibile);
+
+    const rataInfo = getRataMensile(imponibile, durataMesi);
+    const rataMensile = rataInfo.rata;
+
+    const costoGiornaliero = round2(rataMensile / 22);
+    const costoOrario = round2(costoGiornaliero / 8);
+
+    // VR e importo finanziato
+    const vr = getVR(imponibile, durataMesi);
+    const importoFinanziato = round2(imponibile - vr.valore);
+
+    // Scrivi risultati base
+    if ($("rataMensile")) $("rataMensile").textContent = formatEUR(rataMensile) + " €";
+    if ($("speseContratto")) $("speseContratto").textContent = formatEUR(speseContratto) + " €";
+    if ($("costoGiornaliero")) $("costoGiornaliero").textContent = formatEUR(costoGiornaliero) + " €";
+    if ($("costoOrario")) $("costoOrario").textContent = formatEUR(costoOrario) + " €";
+
+    // Scrivi blocco extra
+    updateExtraUI({
+      bandLimit: rataInfo.bandLimit,
+      vrPerc: vr.perc,
+      vrEuro: vr.valore,
+      importoFinanziato: importoFinanziato
     });
   }
 
-  // Auto-calc: quando cambi durata o quando scrivi importo (con debounce)
-  const importoEl = $("importo");
-  const durataEl = $("durata");
+  function calcolaCanoniPerDurate(imponibile) {
+    const bandLimit = getBandLimitForImporto(imponibile);
+    const coeffBand = BCC_COEFFICIENTS_BY_BAND[bandLimit];
 
-  const debounce = (fn, ms) => {
-    let t = null;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), ms);
-    };
-  };
+    const result = {};
+    DURATE_MESI.forEach((mesi) => {
+      result[mesi] = round2(imponibile * (coeffBand[mesi] || 0));
+    });
 
-  if (durataEl) durataEl.addEventListener("change", () => calcola());
-  if (importoEl) importoEl.addEventListener("input", debounce(() => {
-    // calcola solo se c’è un numero valido
-    const v = parseEuropeanFloat(importoEl.value);
-    if (v > 0) calcola();
-  }, 250));
-});
+    return { canoni: result, bandLimit: bandLimit };
+  }
+  function generaTXT() {
+    ensureExtraUI();
 
-// ---------- Service Worker (una sola volta) ----------
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./service-worker.js")
-    .then(() => console.log("Service Worker registrato con successo!"))
-    .catch(err => console.error("Errore SW:", err));
-}
+    const importoRaw = $("importo") ? $("importo").value : "";
+    const imponibile = parseEuropeanFloat(importoRaw);
+
+    if (!imponibile || imponibile <= 0) {
+      alert("Inserisci un importo valido prima di generare il file TXT.");
+      return;
+    }
+
+    const durataMesi = parseInt($("durata") ? $("durata").value : "24", 10) || 24;
+    const speseContratto = getSpeseContratto(imponibile);
+
+    const { canoni, bandLimit } = calcolaCanoniPerDurate(imponibile);
+
+    const vr = getVR(imponibile, durataMesi);
+    const importoFinanziato = round2(imponibile - vr.valore);
+
+    let testo = "";
+    testo += "PREVENTIVO DI NOLEGGIO OPERATIVO BCC (simulazione)\n";
+    testo += "---------------------------------------------------\n\n";
+    testo += `Imponibile fornitura: ${formatEUR(imponibile)} €\n`;
+    testo += `Fascia applicata (fino a): ${formatEUR(bandLimit)} €\n\n`;
+
+    testo += `Durata selezionata: ${durataMesi} mesi\n`;
+    testo += `Valore di riacquisto (VR): ${formatEUR(vr.perc)}% = ${formatEUR(vr.valore)} €\n`;
+    testo += `Importo finanziato (imponibile - VR): ${formatEUR(importoFinanziato)} €\n\n`;
+
+    testo += "CANONI MENSILI DISPONIBILI:\n";
+    DURATE_MESI.forEach((mesi) => {
+      testo += `${mesi} mesi: ${formatEUR(canoni[mesi])} €\n`;
+    });
+
+    testo += "\nDETTAGLI CONTRATTUALI:\n";
+    testo += `Spese di contratto: ${formatEUR(speseContratto)} €\n`;
+    testo += "Spese incasso RID: 4,00 € al mese\n\n";
+
+    testo += "NOTE:\n";
+    testo += "- Calcolo basato su coefficienti BCC per fasce importi e durata.\n";
+    testo += "- I valori possono variare in base a condizioni commerciali/istruttoria.\n";
+
+    const blob = new Blob([testo], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `preventivo_noleggio_${safeFileNumber(imponibile)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------- DARK MODE ----------
+  function bindDarkMode() {
+    const btn = $("darkModeToggle");
+    if (!btn) return;
+
+    btn.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      localStorage.setItem(STORAGE_KEY_DARKMODE, String(document.body.classList.contains("dark-mode")));
+    });
+
+    const saved = localStorage.getItem(STORAGE_KEY_DARKMODE);
+    if (saved === "true") document.body.classList.add("dark-mode");
+  }
+
+  // ---------- SERVICE WORKER ----------
+  function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("Service Worker registrato con successo!"))
+      .catch((err) => console.error("Errore nella registrazione del Service Worker:", err));
+  }
+
+  // ---------- BOOT ----------
+  document.addEventListener("DOMContentLoaded", () => {
+    bindDarkMode();
+    ensureExtraUI();
+    registerServiceWorker();
+  });
+
+  // Esporta funzioni per onclick HTML
+  window.calcola = calcola;
+  window.generaTXT = generaTXT;
+
+})();
