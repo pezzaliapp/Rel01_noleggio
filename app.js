@@ -248,8 +248,12 @@
       testo += `${mesi} mesi: ${formatEUR(canoni[mesi])} €\n`;
     });
 
-    testo += "\nDETTAGLI CONTRATTUALI:\n";
-    testo += "Spese incasso RID: 4,00 € al mese\n\n";
+    testo += "DETTAGLI CONTRATTUALI:\n";
+   testo += "Spese incasso RID: 4,00 € al mese\n\n";
+
+   testo += "NOTE TECNICHE:\n";
+   testo += "- " + NOTA_BCC + "\n";
+   testo += "- Tutti gli importi indicati sono da intendersi IVA esclusa.\n\n";
 
     const blob = new Blob([testo], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
