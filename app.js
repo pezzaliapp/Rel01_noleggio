@@ -1,15 +1,15 @@
 /* =========================================================
    Rel01_noleggio — app.js (pulito / variabili rinominate)
-   - Calcolo allineato a simulatore BCC (tabella coefficienti + fasce)
+   - Calcolo allineato a simulatore (tabella coefficienti + fasce)
    - UI: fascia applicata, VR (valore riacquisto), importo finanziato, badge
    - Nota tecnica in UI + in TXT:
-     “Calcolo allineato al simulatore BCC (scostamenti minimi dovuti ad arrotondamenti Excel)”
+     “Calcolo allineato al simulatore (scostamenti minimi dovuti ad arrotondamenti Excel)”
    ========================================================= */
 
 (function () {
   "use strict";
 
-  // ---------- COSTANTI BCC ----------
+  // ---------- COSTANTI ----------
   const DURATE_MESI = [12, 18, 24, 36, 48, 60];
 
   // VR% per durata (come tua tabella: 10,5,3,1,1,1)
@@ -22,7 +22,7 @@
     60: 1
   };
 
-  // Coefficienti BCC (percentuali convertite in decimali)
+  // Coefficienti (percentuali convertite in decimali)
   // Fasce IMPORTI (fino a): 5k, 15k, 25k, 50k, 100k, 999999
   const BCC_COEFFICIENTS_BY_BAND = {
     5000:   { 12: 0.08112, 18: 0.05824, 24: 0.04555, 36: 0.03236, 48: 0.02544, 60: 0.02136 },
@@ -36,7 +36,7 @@
   const STORAGE_KEY_DARKMODE = "darkMode";
 
   // Nota tecnica richiesta (UI + TXT)
-  const NOTA_BCC = "Calcolo allineato al simulatore  (scostamenti minimi dovuti ad arrotondamenti Excel)";
+  const NOTA_SIM = "Calcolo allineato al simulatore (scostamenti minimi dovuti ad arrotondamenti Excel)";
 
   // ---------- UTILS ----------
   function $(id) {
@@ -113,7 +113,7 @@
     const resultsBox = document.querySelector(".results");
     if (!resultsBox) return;
 
-    if ($("bccBadge")) return; // già creato
+    if ($("simBadge")) return; // già creato
 
     const wrap = document.createElement("div");
     wrap.style.marginTop = "12px";
@@ -124,7 +124,7 @@
 
     wrap.innerHTML = `
       <p style="margin:0 0 8px 0;">
-        <b id="bccBadge">✅ ${NOTA_BCC}</b>
+        <b id="simBadge">✅ ${NOTA_SIM}</b>
       </p>
       <p style="margin:0;">Fascia applicata: <b><span id="fasciaApplicata">—</span></b></p>
       <p style="margin:0;">Valore di riacquisto (VR): <b><span id="vrPerc">—</span>%</b> — <b><span id="vrEuro">—</span> €</b></p>
@@ -226,10 +226,10 @@
     const importoFinanziato = round2(imponibile - vr.valore);
 
     let testo = "";
-    testo += "PREVENTIVO DI NOLEGGIO OPERATIVO BCC (simulazione)\n";
+    testo += "PREVENTIVO DI NOLEGGIO OPERATIVO (simulazione)\n";
     testo += "---------------------------------------------------\n\n";
 
-    testo += `${NOTA_BCC}\n\n`;
+    testo += `${NOTA_SIM}\n\n`;
 
     testo += `Imponibile fornitura: ${formatEUR(imponibile)} €\n`;
     testo += `Fascia applicata (fino a): ${formatEUR(bandLimit)} €\n\n`;
@@ -248,12 +248,12 @@
       testo += `${mesi} mesi: ${formatEUR(canoni[mesi])} €\n`;
     });
 
-    testo += "DETTAGLI CONTRATTUALI:\n";
-   testo += "Spese incasso RID: 4,00 € al mese\n\n";
+    testo += "\nDETTAGLI CONTRATTUALI:\n";
+    testo += "Spese incasso RID: 4,00 € al mese\n\n";
 
-   testo += "NOTE TECNICHE:\n";
-   testo += "- " + NOTA_BCC + "\n";
-   testo += "- Tutti gli importi indicati sono da intendersi IVA esclusa.\n\n";
+    testo += "NOTE TECNICHE:\n";
+    testo += "- " + NOTA_SIM + "\n";
+    testo += "- Tutti gli importi indicati sono da intendersi IVA esclusa.\n\n";
 
     const blob = new Blob([testo], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
