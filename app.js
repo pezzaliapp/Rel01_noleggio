@@ -36,7 +36,7 @@
   const STORAGE_KEY_DARKMODE = "darkMode";
 
   // Nota tecnica richiesta (UI + TXT)
-  const NOTA_BCC = "Calcolo allineato al simulatore BCC (scostamenti minimi dovuti ad arrotondamenti Excel)";
+  const NOTA_BCC = "Calcolo allineato al simulatore  (scostamenti minimi dovuti ad arrotondamenti Excel)";
 
   // ---------- UTILS ----------
   function $(id) {
