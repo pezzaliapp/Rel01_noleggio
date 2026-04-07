@@ -1,5 +1,5 @@
-/* service-worker.js */
-const CACHE_NAME = "rel02_noleggio_v2026_04_07"; // <-- aggiornato Aprile 2026
+/* service-worker.js — Release 02 · Aprile 2026 */
+const CACHE_NAME = "rel02_noleggio_v2026_04_07";
 const ASSETS = [
   "./",
   "./index.html",
@@ -19,19 +19,28 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  self.skipWaiting(); // 🔥 attiva subito il nuovo SW
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : null)))
-    )
+    caches.keys().then(async (keys) => {
+      const oldKeys = keys.filter((k) => k !== CACHE_NAME);
+      const hasOldCache = oldKeys.length > 0;
+
+      await Promise.all(oldKeys.map((k) => caches.delete(k)));
+      await self.clients.claim();
+
+      if (hasOldCache) {
+        const allClients = await self.clients.matchAll({ includeUncontrolled: true });
+        allClients.forEach((client) => {
+          client.postMessage({ type: "APP_UPDATED" });
+        });
+      }
+    })
   );
-  self.clients.claim(); // 🔥 prende controllo subito delle pagine
 });
 
-// Helpers
 async function cacheFirst(req) {
   const cached = await caches.match(req);
   return cached || fetch(req);
@@ -56,31 +65,22 @@ async function staleWhileRevalidate(req) {
     cache.put(req, fresh.clone());
     return fresh;
   }).catch(() => null);
-
   return cached || fetchPromise || caches.match("./index.html");
 }
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
-
   const url = new URL(req.url);
-
-  // Solo stesso origin
   if (url.origin !== self.location.origin) return;
 
-  // HTML: network-first (aggiorna bene)
   if (req.mode === "navigate" || url.pathname.endsWith(".html")) {
     event.respondWith(networkFirst(req));
     return;
   }
-
-  // JS/CSS: stale-while-revalidate (veloce + si aggiorna)
   if (url.pathname.endsWith(".js") || url.pathname.endsWith(".css")) {
     event.respondWith(staleWhileRevalidate(req));
     return;
   }
-
-  // Asset statici: cache-first
   event.respondWith(cacheFirst(req));
 });

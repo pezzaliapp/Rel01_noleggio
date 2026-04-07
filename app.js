@@ -321,12 +321,35 @@
   }
 
   // ---------- SERVICE WORKER ----------
+  const UPDATE_MESSAGE = "🆕 App aggiornata con le tariffe BCC in vigore dal 07.04.2026. Ricarica per applicare la nuova versione.";
+
+  function showUpdateBanner() {
+    const banner = document.getElementById("updateBanner");
+    const text   = document.getElementById("updateBannerText");
+    const btn    = document.getElementById("updateBannerBtn");
+    if (!banner || !text || !btn) return;
+
+    text.textContent = UPDATE_MESSAGE;
+    banner.style.display = "flex";
+
+    btn.addEventListener("click", () => {
+      window.location.reload();
+    });
+  }
+
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
 
     navigator.serviceWorker.register("./service-worker.js")
       .then(() => console.log("Service Worker registrato con successo!"))
       .catch((err) => console.error("Errore nella registrazione del Service Worker:", err));
+
+    // Ascolta il messaggio di aggiornamento inviato dal nuovo SW
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data && event.data.type === "APP_UPDATED") {
+        showUpdateBanner();
+      }
+    });
   }
 
   // ---------- BOOT ----------
