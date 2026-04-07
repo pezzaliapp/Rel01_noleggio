@@ -103,6 +103,49 @@ footer {
   font-size: 1.05em;
 }
 
+/* --- Sezione download PDF --- */
+.pdf-section {
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 10px;
+  background: rgba(0,112,255,.04);
+}
+
+.pdf-section h3 {
+  margin: 0 0 6px 0;
+  font-size: 1em;
+  color: #007bff;
+}
+
+.pdf-note {
+  margin: 0 0 10px 0;
+  font-size: 0.88em;
+  opacity: 0.75;
+}
+
+.pdf-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pdf-btn {
+  display: block;
+  padding: 9px 12px;
+  background-color: #f0f6ff;
+  border: 1px solid #c0d8f8;
+  border-radius: 6px;
+  color: #004aad;
+  text-decoration: none;
+  font-size: 0.92em;
+  transition: background 0.15s;
+}
+
+.pdf-btn:hover {
+  background-color: #dce9fb;
+}
+
 /* Dark mode styling */
 body.dark-mode {
   background-color: #1e1e1e;
@@ -134,4 +177,23 @@ body.dark-mode .bcc-box {
 
 body.dark-mode .bcc-note {
   opacity: 0.8;
+}
+
+body.dark-mode .pdf-section {
+  border-color: rgba(255,255,255,.16);
+  background: rgba(255,255,255,.04);
+}
+
+body.dark-mode .pdf-section h3 {
+  color: #6cb4ff;
+}
+
+body.dark-mode .pdf-btn {
+  background-color: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.2);
+  color: #a8d0ff;
+}
+
+body.dark-mode .pdf-btn:hover {
+  background-color: rgba(255,255,255,.15);
 }

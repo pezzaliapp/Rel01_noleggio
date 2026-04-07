@@ -54,10 +54,18 @@
         </select>
       </div>
 
+      <div class="input-group">
+        <label for="modalita">Modalità canone:</label>
+        <select id="modalita">
+          <option value="mensile" selected>Mensile</option>
+          <option value="trimestrale">Trimestrale</option>
+        </select>
+      </div>
+
       <button class="button" type="button" onclick="calcola()">Calcola</button>
 
       <div class="results">
-        <p>Rata mensile: <span id="rataMensile">0,00 €</span></p>
+        <p><span id="labelRata">Rata mensile:</span> <span id="rataMensile">0,00 €</span></p>
         <p>Spese di contratto: <span id="speseContratto">0,00 €</span></p>
         <p>Costo giornaliero: <span id="costoGiornaliero">0,00 €</span></p>
         <p>Costo orario: <span id="costoOrario">0,00 €</span></p>
@@ -67,13 +75,33 @@
       <button class="button print-button" type="button" onclick="generaTXT()">
         Scarica preventivo TXT
       </button>
+
+      <!-- Sezione Download Documenti BCC -->
+      <div class="pdf-section">
+        <h3>📄 Documenti BCC Rent&amp;Lease</h3>
+        <p class="pdf-note">Scarica i moduli necessari per la pratica di noleggio operativo:</p>
+        <div class="pdf-links">
+          <a class="pdf-btn" href="docs/Domanda_NOLEGGIO.pdf" download="Domanda_NOLEGGIO.pdf">
+            📋 Domanda di Noleggio
+          </a>
+          <a class="pdf-btn" href="docs/Modulo_firma_digitale.pdf" download="Modulo_firma_digitale.pdf">
+            ✍️ Modulo Firma Digitale
+          </a>
+          <a class="pdf-btn" href="docs/Privacy_-_Attestazione_avvenuta_consegna.pdf" download="Privacy_-_Attestazione_avvenuta_consegna.pdf">
+            🔒 Privacy – Attestazione Consegna
+          </a>
+          <a class="pdf-btn" href="docs/Scheda_prodotto_NOLEGGIO.pdf" download="Scheda_prodotto_NOLEGGIO.pdf">
+            📑 Scheda Prodotto Noleggio
+          </a>
+        </div>
+      </div>
     </div>
   </main>
 
   <footer>
   <p>
     &copy; Copyright (c) 2025 Alessandro Pezzali
-    <span class="app-release">Release 01 · Gennaio 2026</span>
+    <span class="app-release">Release 02 · Aprile 2026</span>
   </p>
 </footer>
 

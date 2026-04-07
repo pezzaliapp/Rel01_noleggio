@@ -1,5 +1,5 @@
 /* service-worker.js */
-const CACHE_NAME = "rel01_noleggio_v2026_01_14"; // <-- cambia questa per forzare update
+const CACHE_NAME = "rel02_noleggio_v2026_04_07"; // <-- aggiornato Aprile 2026
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,7 +8,11 @@ const ASSETS = [
   "./manifest.json",
   "./libs/jspdf.umd.min.js",
   "./icons/icons_crm-192x192.png",
-  "./icons/icons_crm-512x512.png"
+  "./icons/icons_crm-512x512.png",
+  "./docs/Domanda_NOLEGGIO.pdf",
+  "./docs/Modulo_firma_digitale.pdf",
+  "./docs/Privacy_-_Attestazione_avvenuta_consegna.pdf",
+  "./docs/Scheda_prodotto_NOLEGGIO.pdf"
 ];
 
 self.addEventListener("install", (event) => {

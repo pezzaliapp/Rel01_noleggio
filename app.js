@@ -22,21 +22,31 @@
     60: 1
   };
 
-  // Coefficienti (percentuali convertite in decimali)
+  // Coefficienti MENSILI aggiornati ad Aprile 2026
   // Fasce IMPORTI (fino a): 5k, 15k, 25k, 50k, 100k, 999999
   const BCC_COEFFICIENTS_BY_BAND = {
-    5000:   { 12: 0.08112, 18: 0.05824, 24: 0.04555, 36: 0.03236, 48: 0.02544, 60: 0.02136 },
-    15000:  { 12: 0.08143, 18: 0.05834, 24: 0.04554, 36: 0.03221, 48: 0.02521, 60: 0.02107 },
-    25000:  { 12: 0.08128, 18: 0.05820, 24: 0.04539, 36: 0.03206, 48: 0.02507, 60: 0.02093 },
-    50000:  { 12: 0.08077, 18: 0.05771, 24: 0.04492, 36: 0.03159, 48: 0.02459, 60: 0.02044 },
-    100000: { 12: 0.08074, 18: 0.05769, 24: 0.04489, 36: 0.03157, 48: 0.02456, 60: 0.02041 },
-    999999: { 12: 0.07978, 18: 0.05696, 24: 0.04430, 36: 0.03111, 48: 0.02418, 60: 0.02007 }
+    5000:   { 12: 0.082439, 18: 0.059311, 24: 0.046504, 36: 0.033168, 48: 0.026190, 60: 0.022041 },
+    15000:  { 12: 0.082877, 18: 0.059535, 24: 0.046604, 36: 0.033134, 48: 0.026076, 60: 0.021877 },
+    25000:  { 12: 0.082722, 18: 0.059386, 24: 0.046458, 36: 0.032988, 48: 0.025928, 60: 0.021725 },
+    50000:  { 12: 0.082206, 18: 0.058894, 24: 0.045973, 36: 0.032505, 48: 0.025436, 60: 0.021223 },
+    100000: { 12: 0.081133, 18: 0.058065, 24: 0.045278, 36: 0.031946, 48: 0.024944, 60: 0.020769 },
+    999999: { 12: 0.080166, 18: 0.057338, 24: 0.044682, 36: 0.031485, 48: 0.024553, 60: 0.020418 }
+  };
+
+  // Coefficienti TRIMESTRALI aggiornati ad Aprile 2026
+  const BCC_COEFFICIENTS_TRIMESTRALE_BY_BAND = {
+    5000:   { 12: 0.249396, 18: 0.179481, 24: 0.140769, 36: 0.100456, 48: 0.079369, 60: 0.066831 },
+    15000:  { 12: 0.250586, 18: 0.180065, 24: 0.141003, 36: 0.100309, 48: 0.078996, 60: 0.066313 },
+    25000:  { 12: 0.250062, 18: 0.179579, 24: 0.140533, 36: 0.099851, 48: 0.078534, 60: 0.065844 },
+    50000:  { 12: 0.248319, 18: 0.177965, 24: 0.138973, 36: 0.098329, 48: 0.077003, 60: 0.064293 },
+    100000: { 12: 0.244988, 18: 0.175398, 24: 0.136824, 36: 0.096607, 48: 0.075493, 60: 0.062902 },
+    999999: { 12: 0.242013, 18: 0.173163, 24: 0.134995, 36: 0.095197, 48: 0.074297, 60: 0.061830 }
   };
 
   const STORAGE_KEY_DARKMODE = "darkMode";
 
   // Nota tecnica richiesta (UI + TXT)
-  const NOTA_SIM = "Calcolo allineato al simulatore (scostamenti minimi dovuti ad arrotondamenti Excel)";
+  const NOTA_SIM = "Coefficienti aggiornati ad Aprile 2026 — allineati al simulatore BCC (scostamenti minimi dovuti ad arrotondamenti Excel)";
 
   // ---------- UTILS ----------
   function $(id) {
@@ -93,6 +103,13 @@
       if (importo <= bands[i]) return bands[i];
     }
     return bands[bands.length - 1];
+  }
+
+  function getRataTrimestraleInfo(importo, durataMesi) {
+    const bandLimit = getBandLimitForImporto(importo);
+    const coeff = BCC_COEFFICIENTS_TRIMESTRALE_BY_BAND[bandLimit] && BCC_COEFFICIENTS_TRIMESTRALE_BY_BAND[bandLimit][durataMesi];
+    const rata = coeff ? round2(importo * coeff) : 0;
+    return { rata: rata, bandLimit: bandLimit, coeff: coeff || 0 };
   }
 
   function getRataMensile(importo, durataMesi) {
@@ -156,33 +173,43 @@
 
     const durataMesi = parseInt($("durata") ? $("durata").value : "24", 10) || 24;
 
-    // Validazione durata
     if (DURATE_MESI.indexOf(durataMesi) === -1) {
       alert("Durata non valida.");
       return;
     }
 
+    const modalita = $("modalita") ? $("modalita").value : "mensile";
     const speseContratto = getSpeseContratto(imponibile);
 
-    const rataInfo = getRataMensile(imponibile, durataMesi);
-    const rataMensile = rataInfo.rata;
+    let rataMensile, bandLimit;
+
+    if (modalita === "trimestrale") {
+      const rataInfo = getRataTrimestraleInfo(imponibile, durataMesi);
+      rataMensile = rataInfo.rata;
+      bandLimit = rataInfo.bandLimit;
+    } else {
+      const rataInfo = getRataMensile(imponibile, durataMesi);
+      rataMensile = rataInfo.rata;
+      bandLimit = rataInfo.bandLimit;
+    }
 
     const costoGiornaliero = round2(rataMensile / 22);
     const costoOrario = round2(costoGiornaliero / 8);
 
-    // VR e importo finanziato
     const vr = getVR(imponibile, durataMesi);
     const importoFinanziato = round2(imponibile - vr.valore);
 
-    // Scrivi risultati base
+    // Aggiorna label rata in base alla modalità
+    const labelRata = $("labelRata");
+    if (labelRata) labelRata.textContent = modalita === "trimestrale" ? "Rata trimestrale:" : "Rata mensile:";
+
     if ($("rataMensile")) $("rataMensile").textContent = formatEUR(rataMensile) + " €";
     if ($("speseContratto")) $("speseContratto").textContent = formatEUR(speseContratto) + " €";
     if ($("costoGiornaliero")) $("costoGiornaliero").textContent = formatEUR(costoGiornaliero) + " €";
     if ($("costoOrario")) $("costoOrario").textContent = formatEUR(costoOrario) + " €";
 
-    // Scrivi blocco extra
     updateExtraUI({
-      bandLimit: rataInfo.bandLimit,
+      bandLimit: bandLimit,
       vrPerc: vr.perc,
       vrEuro: vr.valore,
       importoFinanziato: importoFinanziato
@@ -213,13 +240,23 @@
     }
 
     const durataMesi = parseInt($("durata") ? $("durata").value : "24", 10) || 24;
+    const modalita = $("modalita") ? $("modalita").value : "mensile";
     const speseContratto = getSpeseContratto(imponibile);
 
     const { canoni, bandLimit } = calcolaCanoniPerDurate(imponibile);
 
-    const rataInfo = getRataMensile(imponibile, durataMesi);
-    const rataMensile = rataInfo.rata;
-    const costoGiornaliero = round2(rataMensile / 22);
+    let rataPrincipale, labelRataPrincipale;
+    if (modalita === "trimestrale") {
+      const rataInfo = getRataTrimestraleInfo(imponibile, durataMesi);
+      rataPrincipale = rataInfo.rata;
+      labelRataPrincipale = "Rata trimestrale";
+    } else {
+      const rataInfo = getRataMensile(imponibile, durataMesi);
+      rataPrincipale = rataInfo.rata;
+      labelRataPrincipale = "Rata mensile";
+    }
+
+    const costoGiornaliero = round2(rataPrincipale / 22);
     const costoOrario = round2(costoGiornaliero / 8);
 
     const vr = getVR(imponibile, durataMesi);
@@ -232,12 +269,13 @@
     testo += `${NOTA_SIM}\n\n`;
 
     testo += `Imponibile fornitura: ${formatEUR(imponibile)} €\n`;
-    testo += `Fascia applicata (fino a): ${formatEUR(bandLimit)} €\n\n`;
+    testo += `Fascia applicata (fino a): ${formatEUR(bandLimit)} €\n`;
+    testo += `Modalità canone: ${modalita === "trimestrale" ? "Trimestrale" : "Mensile"}\n\n`;
 
     testo += `Durata selezionata: ${durataMesi} mesi\n`;
-    testo += `Rata mensile: ${formatEUR(rataMensile)} €\n`;
+    testo += `${labelRataPrincipale}: ${formatEUR(rataPrincipale)} €\n`;
     testo += `Spese di contratto: ${formatEUR(speseContratto)} €\n`;
-    testo += `Costo giornaliero: ${formatEUR(costoGiornaliero)} €\n`;
+    testo += `Costo giornaliero (su base mensile): ${formatEUR(costoGiornaliero)} €\n`;
     testo += `Costo orario: ${formatEUR(costoOrario)} €\n\n`;
 
     testo += `Valore di riacquisto (VR): ${formatEUR(vr.perc)}% = ${formatEUR(vr.valore)} €\n`;
