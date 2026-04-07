@@ -9,10 +9,10 @@ const ASSETS = [
   "./libs/jspdf.umd.min.js",
   "./icons/icons_crm-192x192.png",
   "./icons/icons_crm-512x512.png",
-  "./docs/Domanda_NOLEGGIO.pdf",
-  "./docs/Modulo_firma_digitale.pdf",
-  "./docs/Privacy_-_Attestazione_avvenuta_consegna.pdf",
-  "./docs/Scheda_prodotto_NOLEGGIO.pdf"
+  "./data/Domanda_NOLEGGIO.pdf",
+  "./data/Modulo_firma_digitale.pdf",
+  "./data/Privacy_-_Attestazione_avvenuta_consegna.pdf",
+  "./data/Scheda_prodotto_NOLEGGIO.pdf"
 ];
 
 self.addEventListener("install", (event) => {
