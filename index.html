@@ -2,117 +2,1911 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#007bff">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" sizes="192x192" href="icons/icons_crm-192x192.png">
-  <link rel="icon" sizes="512x512" href="icons/icons_crm-512x512.png">
-  <link rel="stylesheet" href="style.css">
-  <title>Calcolo Noleggio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#e8ff47">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TireCheck Pro">
+  <title>TireCheck Pro · PezzaliApp</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ETKJKTB8LK"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-ETKJKTB8LK');
-  </script>
+  <!-- jsPDF per generazione PDF lato client -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    /* ── DESIGN SYSTEM ─────────────────────────────────── */
+    :root {
+      --bg:        #0d0d0d;
+      --bg2:       #141414;
+      --card:      #1a1a1a;
+      --card2:     #222222;
+      --border:    #2a2a2a;
+      --border2:   #333333;
+      --accent:    #e8ff47;
+      --accent2:   #c8df27;
+      --danger:    #ff4757;
+      --warn:      #ffa502;
+      --ok:        #2ed573;
+      --text:      #f0f0f0;
+      --text2:     #888888;
+      --text3:     #555555;
+      --font-ui:   'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+      --r:         12px;
+      --r-sm:      8px;
+      --shadow:    0 4px 24px rgba(0,0,0,.6);
+      --shadow-accent: 0 0 32px rgba(232,255,71,.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-ui);
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ── LAYOUT SHELL ──────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-logo {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+      line-height: 1.1;
+    }
+
+    .header-title span {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 400;
+      color: var(--accent);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .btn-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--r-sm);
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .15s;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+    .btn-icon:active { background: var(--card2); transform: scale(.93); }
+
+    /* ── SCREENS ───────────────────────────────────────── */
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    .screen.active { display: flex; }
+
+    /* ── BOTTOM NAV ────────────────────────────────────── */
+    nav {
+      display: flex;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 10px 4px;
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      transition: color .15s;
+      font-family: var(--font-mono);
+      font-size: 8px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .nav-btn .ico { font-size: 20px; }
+    .nav-btn.active { color: var(--accent); }
+    .nav-btn:active { opacity: .7; }
+
+    /* ── BUTTONS ───────────────────────────────────────── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 20px;
+      border-radius: var(--r);
+      font-family: var(--font-ui);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      border: none;
+      width: 100%;
+    }
+    .btn:active { transform: scale(.97); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0d0d0d;
+    }
+    .btn-primary:hover { background: var(--accent2); }
+
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--border2); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .btn-sm {
+      padding: 9px 14px;
+      font-size: 13px;
+      border-radius: var(--r-sm);
+      width: auto;
+    }
+
+    /* ── CARDS ─────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px;
+    }
+
+    /* ── FORM ELEMENTS ─────────────────────────────────── */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+
+    input, select, textarea {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 12px 14px;
+      font-family: var(--font-ui);
+      font-size: 15px;
+      color: var(--text);
+      width: 100%;
+      outline: none;
+      transition: border-color .15s;
+      appearance: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    input[type="password"] { letter-spacing: .1em; }
+    textarea { resize: none; }
+
+    select option { background: var(--card); }
+
+    /* ── BADGES ESITO ──────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .badge-ok     { background: rgba(46,213,115,.15); color: var(--ok);     border: 1px solid rgba(46,213,115,.3); }
+    .badge-warn   { background: rgba(255,165,2,.15);  color: var(--warn);   border: 1px solid rgba(255,165,2,.3); }
+    .badge-danger { background: rgba(255,71,87,.15);  color: var(--danger); border: 1px solid rgba(255,71,87,.3); }
+
+    /* ── SCREEN: HOME / SCANSIONE ──────────────────────── */
+    #screen-scan {
+      padding: 0;
+    }
+
+    .camera-zone {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: #000;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    #preview-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .camera-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--text3);
+    }
+
+    .camera-placeholder .cam-ico {
+      font-size: 56px;
+      opacity: .35;
+    }
+
+    .camera-placeholder p {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: .5;
+    }
+
+    /* corner brackets overlay */
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .camera-overlay::before,
+    .camera-overlay::after {
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border-color: var(--accent);
+      border-style: solid;
+      opacity: .8;
+    }
+    .camera-overlay::before {
+      top: 16px; left: 16px;
+      border-width: 3px 0 0 3px;
+    }
+    .camera-overlay::after {
+      bottom: 16px; right: 16px;
+      border-width: 0 3px 3px 0;
+    }
+
+    .scan-actions {
+      padding: 16px 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-camera {
+      flex: 1;
+      background: var(--accent);
+      color: #0d0d0d;
+      border: none;
+      border-radius: var(--r);
+      padding: 14px;
+      font-family: var(--font-ui);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all .15s;
+    }
+    .btn-camera:active { transform: scale(.97); background: var(--accent2); }
+
+    #file-input { display: none; }
+
+    /* dati veicolo */
+    .scan-form {
+      padding: 0 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ── SCREEN: ANALISI AI ────────────────────────────── */
+    #screen-analysis {
+      padding: 20px;
+      gap: 16px;
+    }
+
+    .analysis-header {
+      text-align: center;
+    }
+
+    .analysis-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .analysis-header p {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    /* thumbnail risultato */
+    .result-thumb {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    /* stato analisi */
+    .ai-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .ai-status-text {
+      font-size: 14px;
+      color: var(--text2);
+    }
+
+    /* metriche usura */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .metric-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+
+    .metric-value {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .metric-value.ok     { color: var(--ok); }
+    .metric-value.warn   { color: var(--warn); }
+    .metric-value.danger { color: var(--danger); }
+
+    .metric-sub {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text3);
+    }
+
+    /* commento AI */
+    .ai-comment {
+      background: var(--card);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--r) var(--r) 0;
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text2);
+    }
+
+    /* firma digitale */
+    .signature-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .signature-pad-wrap {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      background: #fff;
+    }
+
+    #signature-pad {
+      display: block;
+      width: 100%;
+      height: 120px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .signature-hint {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #ccc;
+      letter-spacing: .06em;
+      transition: opacity .3s;
+    }
+    .signature-hint.hidden { opacity: 0; }
+
+    .sign-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .analysis-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 10px;
+    }
+
+    /* ── SCREEN: STORICO ───────────────────────────────── */
+    #screen-history {
+      padding: 20px;
+      gap: 14px;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .history-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .history-count {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text2);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+
+    .history-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .history-item:active { border-color: var(--accent); }
+
+    .history-thumb {
+      width: 54px;
+      height: 54px;
+      border-radius: var(--r-sm);
+      object-fit: cover;
+      background: var(--bg2);
+      flex-shrink: 0;
+    }
+
+    .history-info { flex: 1; min-width: 0; }
+
+    .history-plate {
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: .04em;
+    }
+
+    .history-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .history-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text3);
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .history-empty .ico { font-size: 48px; opacity: .3; }
+
+    .history-empty p {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+
+    /* ── SCREEN: IMPOSTAZIONI ──────────────────────────── */
+    #screen-settings {
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .settings-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .settings-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .api-info {
+      background: rgba(232,255,71,.05);
+      border: 1px solid rgba(232,255,71,.15);
+      border-radius: var(--r-sm);
+      padding: 12px 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1.7;
+      color: var(--text2);
+    }
+
+    .api-info strong { color: var(--accent); }
+
+    /* ── TOAST ─────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--card2);
+      border: 1px solid var(--border2);
+      border-radius: var(--r);
+      padding: 12px 20px;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      color: var(--text);
+      white-space: nowrap;
+      opacity: 0;
+      transition: all .25s;
+      z-index: 999;
+      pointer-events: none;
+      max-width: calc(100vw - 40px);
+      white-space: normal;
+      text-align: center;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #toast.success { border-color: var(--ok); color: var(--ok); }
+    #toast.error   { border-color: var(--danger); color: var(--danger); }
+    #toast.warn    { border-color: var(--warn); color: var(--warn); }
+
+    /* ── MODAL STORICO DETAIL ──────────────────────────── */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 500;
+      backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal-sheet {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r) var(--r) 0 0;
+      width: 100%;
+      max-width: 480px;
+      max-height: 85dvh;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border2);
+      border-radius: 2px;
+      margin: 0 auto;
+    }
+
+    /* ── ANIMAZIONI ENTRATA ────────────────────────────── */
+    .fade-in {
+      animation: fadeUp .3s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── SCROLLBAR ─────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  </style>
 </head>
-
 <body>
+<div id="app">
 
-  <!-- Banner aggiornamento automatico -->
-  <div id="updateBanner" style="display:none;">
-    <span id="updateBannerText"></span>
-    <button id="updateBannerBtn" type="button">Ricarica ora</button>
-  </div>
-
+  <!-- ═══════════ HEADER ═══════════ -->
   <header>
-    <h1>Calcolo Noleggio</h1>
-    <button id="darkModeToggle" type="button">🌙 Modalità Scura</button>
-  </header>
-
-  <main>
-    <div class="noleggio-container">
-      <h2>Simulatore Calcolo Canoni Locazione</h2>
-
-      <div class="input-group">
-        <label for="importo">Inserisci importo:</label>
-        <input
-          type="text"
-          id="importo"
-          placeholder="Inserisci importo"
-          autocomplete="off"
-          inputmode="decimal"
-          enterkeyhint="done"
-        />
-      </div>
-
-      <div class="input-group">
-        <label for="durata">Durata:</label>
-        <select id="durata">
-          <option value="12">12 mesi</option>
-          <option value="18">18 mesi</option>
-          <option value="24" selected>24 mesi</option>
-          <option value="36">36 mesi</option>
-          <option value="48">48 mesi</option>
-          <option value="60">60 mesi</option>
-        </select>
-      </div>
-
-      <div class="input-group">
-        <label for="modalita">Modalità canone:</label>
-        <select id="modalita">
-          <option value="mensile" selected>Mensile</option>
-          <option value="trimestrale">Trimestrale</option>
-        </select>
-      </div>
-
-      <button class="button" type="button" onclick="calcola()">Calcola</button>
-
-      <div class="results">
-        <p><span id="labelRata">Rata mensile:</span> <span id="rataMensile">0,00 €</span></p>
-        <p>Spese di contratto: <span id="speseContratto">0,00 €</span></p>
-        <p>Costo giornaliero: <span id="costoGiornaliero">0,00 €</span></p>
-        <p>Costo orario: <span id="costoOrario">0,00 €</span></p>
-      </div>
-
-      <!-- Bottone per la generazione del TXT -->
-      <button class="button print-button" type="button" onclick="generaTXT()">
-        Scarica preventivo TXT
-      </button>
-
-      <!-- Sezione Download Documenti BCC -->
-      <div class="pdf-section">
-        <h3>📄 Documenti BCC Rent&amp;Lease</h3>
-        <p class="pdf-note">Scarica i moduli necessari per la pratica di noleggio operativo:</p>
-        <div class="pdf-links">
-          <a class="pdf-btn" href="docs/Domanda_NOLEGGIO.pdf" download="Domanda_NOLEGGIO.pdf">
-            📋 Domanda di Noleggio
-          </a>
-          <a class="pdf-btn" href="docs/Modulo_firma_digitale.pdf" download="Modulo_firma_digitale.pdf">
-            ✍️ Modulo Firma Digitale
-          </a>
-          <a class="pdf-btn" href="docs/Privacy_-_Attestazione_avvenuta_consegna.pdf" download="Privacy_-_Attestazione_avvenuta_consegna.pdf">
-            🔒 Privacy – Attestazione Consegna
-          </a>
-          <a class="pdf-btn" href="docs/Scheda_prodotto_NOLEGGIO.pdf" download="Scheda_prodotto_NOLEGGIO.pdf">
-            📑 Scheda Prodotto Noleggio
-          </a>
-        </div>
+    <div class="header-brand">
+      <svg class="header-logo" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#1a1a1a"/>
+        <circle cx="16" cy="16" r="10" stroke="#e8ff47" stroke-width="2.5"/>
+        <circle cx="16" cy="16" r="4" fill="#e8ff47"/>
+        <line x1="16" y1="6" x2="16" y2="4" stroke="#e8ff47" stroke-width="2" stroke-linecap="round"/>
+        <line x1="16" y1="28" x2="16" y2="26" stroke="#e8ff47" stroke-width="2" stroke-linecap="round"/>
+        <line x1="6" y1="16" x2="4" y2="16" stroke="#e8ff47" stroke-width="2" stroke-linecap="round"/>
+        <line x1="28" y1="16" x2="26" y2="16" stroke="#e8ff47" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div class="header-title">
+        TireCheck Pro
+        <span>by PezzaliApp</span>
       </div>
     </div>
-  </main>
+    <div style="display:flex;gap:8px">
+      <button class="btn-icon" onclick="newScan()" title="Nuova scansione">＋</button>
+    </div>
+  </header>
 
-  <footer>
-  <p>
-    &copy; Copyright (c) 2025 Alessandro Pezzali
-    <span class="app-release">Release 02 · Aprile 2026</span>
-  </p>
-</footer>
+  <!-- ═══════════ SCREEN: HOME ═══════════ -->
+  <div id="screen-home" class="screen active">
+    <div style="padding:28px 20px;display:flex;flex-direction:column;gap:20px;flex:1">
 
-  <!-- Logica dell'app -->
-  <script src="app.js"></script>
+      <!-- hero -->
+      <div style="text-align:center;padding:20px 0 10px">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="72" height="72" rx="18" fill="#1a1a1a"/>
+          <circle cx="36" cy="36" r="24" stroke="#e8ff47" stroke-width="4"/>
+          <circle cx="36" cy="36" r="9" fill="#e8ff47"/>
+          <line x1="36" y1="12" x2="36" y2="8" stroke="#e8ff47" stroke-width="3" stroke-linecap="round"/>
+          <line x1="36" y1="64" x2="36" y2="60" stroke="#e8ff47" stroke-width="3" stroke-linecap="round"/>
+          <line x1="12" y1="36" x2="8" y2="36" stroke="#e8ff47" stroke-width="3" stroke-linecap="round"/>
+          <line x1="64" y1="36" x2="60" y2="36" stroke="#e8ff47" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div style="font-size:26px;font-weight:800;margin-top:14px;letter-spacing:-.5px">TireCheck Pro</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--accent);letter-spacing:.14em;margin-top:4px">BY PEZZALIAPP</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:10px;line-height:1.6">Diagnosi pneumatici con intelligenza artificiale.<br>Foto → Analisi → Report PDF firmabile.</div>
+      </div>
+
+      <!-- status setup -->
+      <div id="home-status-card" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;color:var(--accent);text-transform:uppercase">Stato configurazione</div>
+        <div id="home-api-status" style="display:flex;align-items:center;gap:10px;font-size:13px"></div>
+        <div id="home-officina-status" style="display:flex;align-items:center;gap:10px;font-size:13px"></div>
+        <div id="home-webhook-status" style="display:flex;align-items:center;gap:10px;font-size:13px"></div>
+      </div>
+
+      <!-- CTA -->
+      <button class="btn btn-primary" style="font-size:17px;padding:18px" onclick="goScreen('scan');updateNav('scan')">
+        📸 Inizia scansione
+      </button>
+      <button class="btn btn-secondary" onclick="goScreen('settings');loadSettings();updateNav('settings')">
+        ⚙️ Configura impostazioni
+      </button>
+
+      <!-- stats -->
+      <div id="home-stats" style="display:flex;gap:10px">
+        <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center">
+          <div id="home-count" style="font-size:28px;font-weight:800;color:var(--accent)">0</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text2);text-transform:uppercase;margin-top:2px">Analisi</div>
+        </div>
+        <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center">
+          <div id="home-ok-count" style="font-size:28px;font-weight:800;color:var(--ok)">0</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text2);text-transform:uppercase;margin-top:2px">OK</div>
+        </div>
+        <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center">
+          <div id="home-danger-count" style="font-size:28px;font-weight:800;color:var(--danger)">0</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text2);text-transform:uppercase;margin-top:2px">Urgenti</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════ SCREEN: SCANSIONE ═══════════ -->
+  <div id="screen-scan" class="screen">
+
+    <!-- zona camera -->
+    <div class="camera-zone" onclick="triggerCamera()">
+      <img id="preview-img" alt="Anteprima pneumatico">
+      <div class="camera-placeholder" id="cam-placeholder">
+        <div class="cam-ico">📷</div>
+        <p>Tocca per fotografare</p>
+        <p style="font-size:9px;opacity:.6;margin-top:4px;padding:0 20px;text-align:center;line-height:1.5">
+          📐 Fotografa frontalmente il battistrada<br>con buona illuminazione
+        </p>
+      </div>
+      <div class="camera-overlay"></div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*" capture="environment">
+
+    <!-- tasto scatta + galleria -->
+    <div class="scan-actions">
+      <button class="btn-camera" onclick="triggerCamera()">
+        <span>📸</span> Scatta foto
+      </button>
+      <button class="btn-icon" onclick="triggerGallery()" title="Galleria" style="width:48px;height:48px">🖼️</button>
+    </div>
+
+    <!-- form dati veicolo -->
+    <div class="scan-form">
+      <div class="section-label">Dati Veicolo</div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Targa</label>
+          <input type="text" id="f-targa" placeholder="AB123CD" style="text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label>Posizione gomma</label>
+          <select id="f-posizione">
+            <option value="Anteriore SX">Ant. SX</option>
+            <option value="Anteriore DX">Ant. DX</option>
+            <option value="Posteriore SX">Post. SX</option>
+            <option value="Posteriore DX">Post. DX</option>
+            <option value="Ruota di scorta">Scorta</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Marca gomma</label>
+          <input type="text" id="f-marca" placeholder="es. Michelin">
+        </div>
+        <div class="field">
+          <label>Misura</label>
+          <input type="text" id="f-misura" placeholder="205/55 R16">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Cliente / Veicolo</label>
+        <input type="text" id="f-cliente" placeholder="Nome cliente o note veicolo">
+      </div>
+
+      <button class="btn btn-primary" id="btn-analyze" onclick="startAnalysis()" disabled>
+        🔍 Analizza con AI
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════ SCREEN: ANALISI ═══════════ -->
+  <div id="screen-analysis" class="screen">
+
+    <div class="analysis-header fade-in">
+      <h2>Risultato Analisi</h2>
+      <p id="analysis-subtitle">in elaborazione…</p>
+    </div>
+
+    <img id="result-thumb" class="result-thumb" alt="Pneumatico analizzato">
+
+    <!-- stato AI -->
+    <div class="ai-status" id="ai-status">
+      <div class="spinner"></div>
+      <div class="ai-status-text">Analisi AI in corso…</div>
+    </div>
+
+    <!-- risultati (nascosti finché non pronti) -->
+    <div id="results-container" style="display:none;flex-direction:column;gap:16px">
+
+      <!-- esito principale -->
+      <div class="card" style="text-align:center;padding:20px">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Esito</div>
+        <div id="esito-badge" style="display:flex;justify-content:center;margin-bottom:8px"></div>
+        <div id="esito-title" style="font-size:22px;font-weight:800;margin-top:4px"></div>
+      </div>
+
+      <!-- metriche -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Profondità stimata</div>
+          <div class="metric-value" id="m-depth">—</div>
+          <div class="metric-sub">min. legale 1.6mm</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Usura uniforme</div>
+          <div class="metric-value" id="m-uniform">—</div>
+          <div class="metric-sub" id="m-uniform-sub"></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Condizione fianco</div>
+          <div class="metric-value" id="m-side">—</div>
+          <div class="metric-sub" id="m-side-sub"></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Urgenza</div>
+          <div class="metric-value" id="m-urgency">—</div>
+          <div class="metric-sub" id="m-urgency-sub"></div>
+        </div>
+      </div>
+
+      <!-- commento AI -->
+      <div>
+        <div class="section-label">Valutazione AI</div>
+        <div class="ai-comment" id="ai-comment">—</div>
+      </div>
+
+      <!-- firma cliente -->
+      <div class="signature-section">
+        <div class="section-label">Firma Cliente</div>
+        <div class="signature-pad-wrap">
+          <canvas id="signature-pad" width="800" height="240"></canvas>
+          <div class="signature-hint" id="sign-hint">Firma qui</div>
+        </div>
+        <div class="sign-actions">
+          <button class="btn btn-secondary btn-sm" onclick="clearSignature()">✕ Cancella</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleSignatureRequired()" id="btn-skip-sign" style="flex:1">Procedi senza firma</button>
+        </div>
+      </div>
+
+      <!-- azioni finali -->
+      <div class="analysis-actions">
+        <button class="btn btn-primary" onclick="generatePDF()">📄 Genera Report PDF</button>
+        <button class="btn btn-secondary" onclick="sendWebhook()">📡 Invia a Make.com</button>
+        <button class="btn btn-secondary" onclick="newScan()">＋ Nuova scansione</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════ SCREEN: STORICO ═══════════ -->
+  <div id="screen-history" class="screen">
+    <div class="history-header">
+      <h2>Storico</h2>
+      <span class="history-count" id="history-count">0 analisi</span>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- ═══════════ SCREEN: IMPOSTAZIONI ═══════════ -->
+  <div id="screen-settings" class="screen">
+    <div class="settings-title">Impostazioni</div>
+
+    <div class="settings-section">
+      <div class="section-label">Gemini AI</div>
+      <div class="api-info">
+        <strong>🔐 Privacy:</strong> la chiave viene salvata solo su questo dispositivo
+        (localStorage) e inviata esclusivamente a Google Gemini API.
+        Non transita su nessun server PezzaliApp.
+      </div>
+      <div class="field">
+        <label>Gemini API Key</label>
+        <input type="password" id="s-gemini-key" placeholder="AIzaSy…" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-label">Make.com Webhook</div>
+      <div class="field">
+        <label>Webhook URL</label>
+        <input type="url" id="s-webhook" placeholder="https://hook.eu1.make.com/…">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-label">Officina</div>
+      <div class="field">
+        <label>Nome officina</label>
+        <input type="text" id="s-officina" placeholder="es. Pneumatici Rossi">
+      </div>
+      <div class="field">
+        <label>Telefono</label>
+        <input type="tel" id="s-tel" placeholder="+39 …">
+      </div>
+      <div class="field">
+        <label>Indirizzo</label>
+        <input type="text" id="s-addr" placeholder="Via …, Città">
+      </div>
+      <div class="field">
+        <label>P.IVA</label>
+        <input type="text" id="s-piva" placeholder="IT00000000000">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveSettings()">💾 Salva impostazioni</button>
+    <button class="btn btn-danger" onclick="clearHistory()" style="margin-top:4px">🗑️ Svuota storico</button>
+
+    <div style="text-align:center;font-family:var(--font-mono);font-size:9px;color:var(--text3);padding:10px 0">
+      TireCheck Pro · v1.0 · PezzaliApp
+    </div>
+  </div>
+
+  <!-- ═══════════ BOTTOM NAV ═══════════ -->
+  <nav>
+    <button class="nav-btn active" id="nav-home" onclick="goScreen('home');loadHome()">
+      <span class="ico">🏠</span>Home
+    </button>
+    <button class="nav-btn" id="nav-scan" onclick="goScreen('scan');updateNav('scan')">
+      <span class="ico">🔍</span>Scansione
+    </button>
+    <button class="nav-btn" id="nav-analysis" onclick="goScreen('analysis');updateNav('analysis')">
+      <span class="ico">📊</span>Analisi
+    </button>
+    <button class="nav-btn" id="nav-history" onclick="goScreen('history');loadHistory();updateNav('history')">
+      <span class="ico">📋</span>Storico
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="goScreen('settings');loadSettings();updateNav('settings')">
+      <span class="ico">⚙️</span>Setup
+    </button>
+  </nav>
+
+</div>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div id="toast"></div>
+
+<!-- ═══════════ MODAL STORICO DETAIL ═══════════ -->
+<div class="modal-backdrop" id="detail-modal" onclick="closeModal(event)">
+  <div class="modal-sheet" id="detail-sheet">
+    <div class="modal-handle"></div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════ BANNER FIRST RUN ═══════════ -->
+<div class="modal-backdrop" id="onboarding-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">🔧</div>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:6px">Benvenuto in TireCheck Pro</h2>
+      <p style="font-family:var(--font-mono);font-size:11px;color:var(--text2);line-height:1.7">
+        Per usare l'analisi AI inserisci la tua <strong style="color:var(--accent)">Gemini API Key</strong> gratuita.<br>
+        Vai su <strong>aistudio.google.com</strong> → Get API Key → crea chiave gratuita.
+      </p>
+    </div>
+    <button class="btn btn-primary" onclick="closeOnboarding()">Configura ora →</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('onboarding-modal').classList.remove('open')" style="margin-top:4px">Dopo</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   TIRECHECK PRO · LOGICA APPLICAZIONE
+   PezzaliApp © 2025
+═══════════════════════════════════════════════ */
+
+// ── STATE ──────────────────────────────────────
+const state = {
+  currentImage: null,      // base64 dell'immagine corrente
+  currentImageFile: null,  // File object
+  analysisResult: null,    // oggetto risultato AI
+  signatureData: null,     // base64 firma
+  signaturePad: null,      // istanza canvas ctx
+  isDrawing: false,
+  hasDrawn: false,
+  skipSignature: false,
+};
+
+// ── STORAGE KEYS ───────────────────────────────
+const KEYS = {
+  gemini: 'tirecheck-gemini-key',
+  webhook: 'tirecheck-webhook',
+  officina: 'tirecheck-officina',
+  tel: 'tirecheck-tel',
+  addr: 'tirecheck-addr',
+  piva: 'tirecheck-piva',
+  history: 'tirecheck-history',
+};
+
+// ── INIT ───────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  initSignaturePad();
+  setupFileInput();
+
+  // Parte sempre da home
+  goScreen('home');
+  loadHome();
+});
+
+// ── UPDATE NAV ─────────────────────────────────
+function updateNav(name) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('nav-' + name);
+  if (btn) btn.classList.add('active');
+}
+
+// ── LOAD HOME ──────────────────────────────────
+function loadHome() {
+  const key = ls(KEYS.gemini);
+  const officina = ls(KEYS.officina);
+  const webhook = ls(KEYS.webhook);
+
+  const apiEl = document.getElementById('home-api-status');
+  const offEl = document.getElementById('home-officina-status');
+  const whEl  = document.getElementById('home-webhook-status');
+
+  if (apiEl) apiEl.innerHTML = key
+    ? '<span style="color:var(--ok)">✅</span> Gemini API Key configurata'
+    : '<span style="color:var(--danger)">❌</span> <strong>Gemini API Key mancante</strong> — vai in Setup';
+
+  if (offEl) offEl.innerHTML = officina
+    ? `<span style="color:var(--ok)">✅</span> Officina: ${officina}`
+    : '<span style="color:var(--text3)">○</span> Nome officina non impostato';
+
+  if (whEl) whEl.innerHTML = webhook
+    ? '<span style="color:var(--ok)">✅</span> Make.com webhook configurato'
+    : '<span style="color:var(--text3)">○</span> Webhook Make.com non configurato';
+
+  // statistiche storico
+  const history = getHistory();
+  const okCount = history.filter(h => h.esito === 'OK').length;
+  const dangerCount = history.filter(h => h.esito === 'SOSTITUIRE').length;
+  const countEl = document.getElementById('home-count');
+  const okEl = document.getElementById('home-ok-count');
+  const dangerEl = document.getElementById('home-danger-count');
+  if (countEl) countEl.textContent = history.length;
+  if (okEl) okEl.textContent = okCount;
+  if (dangerEl) dangerEl.textContent = dangerCount;
+
+  // se manca la key: mostra avviso visivo (no modal intrusivo)
+  updateNav('home');
+}
+
+// ── NAVIGATION ─────────────────────────────────
+function goScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const screen = document.getElementById('screen-' + name);
+  if (screen) screen.classList.add('active');
+  updateNav(name);
+}
+
+// ── FILE INPUT / CAMERA ────────────────────────
+function setupFileInput() {
+  const fi = document.getElementById('file-input');
+  fi.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    handleImageFile(file);
+    fi.value = '';
+  });
+}
+
+function triggerCamera() {
+  const fi = document.getElementById('file-input');
+  fi.removeAttribute('multiple');
+  fi.setAttribute('capture', 'environment');
+  fi.click();
+}
+
+function triggerGallery() {
+  const fi = document.getElementById('file-input');
+  fi.removeAttribute('capture');
+  fi.click();
+}
+
+function handleImageFile(file) {
+  state.currentImageFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.currentImage = e.target.result; // data URL
+    const img = document.getElementById('preview-img');
+    img.src = state.currentImage;
+    img.style.display = 'block';
+    document.getElementById('cam-placeholder').style.display = 'none';
+    document.getElementById('btn-analyze').disabled = false;
+    toast('Immagine caricata — pronto per analisi', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── ANALISI AI ─────────────────────────────────
+async function startAnalysis() {
+  const apiKey = ls(KEYS.gemini);
+  if (!apiKey) {
+    toast('⚠️ Configura la Gemini API Key nelle impostazioni', 'error');
+    return;
+  }
+  if (!state.currentImage) {
+    toast('⚠️ Scatta prima una foto del pneumatico', 'warn');
+    return;
+  }
+
+  // passa alla schermata analisi
+  goScreen('analysis');
+  document.getElementById('analysis-subtitle').textContent = 'analisi in corso…';
+  document.getElementById('ai-status').style.display = 'flex';
+  document.getElementById('results-container').style.display = 'none';
+
+  // mostra thumbnail
+  const thumb = document.getElementById('result-thumb');
+  thumb.src = state.currentImage;
+  thumb.style.display = 'block';
+
+  // prepara base64 puro (rimuovi data:image/...;base64,)
+  const base64 = state.currentImage.split(',')[1];
+  const mimeMatch = state.currentImage.match(/data:(image\/[^;]+);/);
+  const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
+  const prompt = `Sei un tecnico gommista esperto con 20 anni di esperienza. Analizza questa foto di un pneumatico.
+
+REGOLE CRITICHE PER UNA VALUTAZIONE CORRETTA:
+1. Valuta SOLO ciò che è chiaramente visibile nel battistrada. NON fare supposizioni.
+2. Se la foto è angolata, laterale o il battistrada non è visibile frontalmente: usa ATTENZIONE con profondita_mm null.
+3. Usa SOSTITUIRE solo se vedi CHIARAMENTE: battistrada a filo, indicatori di usura esposti, o danni strutturali certi.
+4. Ombre scure nei solchi del battistrada significano solchi PROFONDI (pneumatico in buono stato), NON usura.
+5. Un battistrada nuovo o poco usato ha solchi profondi (7-8mm) con ombre marcate — NON confonderli con danni.
+6. In caso di dubbio scegli sempre l'esito più favorevole: OK > ATTENZIONE > SOSTITUIRE.
+
+Rispondi SOLO con JSON valido, niente markdown:
+{
+  "esito": "OK" oppure "ATTENZIONE" oppure "SOSTITUIRE",
+  "profondita_mm": numero decimale oppure null se non misurabile,
+  "usura_uniforme": true oppure false,
+  "tipo_usura": "uniforme" oppure "centrale" oppure "laterale" oppure "irregolare" oppure "nessuna anomalia" oppure "non determinabile",
+  "condizione_fianco": "OK" oppure "DANNEGGIATO" oppure "VERIFICARE",
+  "urgenza": "bassa" oppure "media" oppure "alta" oppure "critica",
+  "commento": "Descrizione oggettiva in italiano di massimo 3 frasi: cosa vedi esattamente, qualità e angolo della foto, motivazione dell'esito."
+}`;
+
+  // Chiamata diretta — stesso pattern di TriageFirst che funziona
+  const MODEL = 'gemini-2.5-flash-lite';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+
+  let response, usedModel;
+
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { inlineData: { mimeType: mimeType, data: base64 } },
+            { text: prompt }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 800,
+          topP: 0.8,
+        },
+        safetySettings: [
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        ],
+      })
+    });
+
+    usedModel = MODEL;
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const msg = errData.error?.message || `HTTP ${response.status}`;
+      throw new Error(`Gemini error: ${msg}`);
+    }
+
+    const data = await response.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    // debug: logga risposta raw
+    console.log('[TireCheck] Gemini raw:', raw);
+
+    if (!raw) {
+      const reason = data.candidates?.[0]?.finishReason;
+      if (reason === 'SAFETY') throw new Error("Immagine bloccata dai filtri Gemini - prova altra foto");
+      throw new Error('Risposta Gemini vuota (finishReason: ' + (reason || 'sconosciuto') + ')');
+    }
+
+    // parsing ultra-robusto
+    let result;
+    const attempts = [
+      () => JSON.parse(raw.trim()),
+      () => JSON.parse(raw.replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'').trim()),
+      () => { const m = raw.match(/\{[\s\S]*?\}/); if(m) return JSON.parse(m[0]); throw 0; },
+      () => { const m = raw.match(/\{[\s\S]*\}/); if(m) return JSON.parse(m[0]); throw 0; },
+    ];
+    let parseErr;
+    for (const fn of attempts) { try { result = fn(); break; } catch(e) { parseErr = e; } }
+
+    if (!result) {
+      throw new Error('JSON non parsabile. Apri F12 Console per vedere la risposta raw. Dettaglio: ' + (parseErr && parseErr.message ? parseErr.message : 'parse error'));
+    }
+
+    // normalizza campi
+    if (!result.esito || !['OK','ATTENZIONE','SOSTITUIRE'].includes(result.esito)) result.esito = 'ATTENZIONE';
+    result.profondita_mm = result.profondita_mm ?? result['profondità_mm'] ?? null;
+    result.usura_uniforme = result.usura_uniforme ?? true;
+    result.tipo_usura = result.tipo_usura ?? 'non determinato';
+    result.condizione_fianco = result.condizione_fianco ?? 'VERIFICARE';
+    result.urgenza = result.urgenza ?? 'media';
+    result.commento = result.commento ?? raw.substring(0, 300);
+
+    state.analysisResult = {
+      ...result,
+      targa: document.getElementById('f-targa').value.toUpperCase(),
+      posizione: document.getElementById('f-posizione').value,
+      marca: document.getElementById('f-marca').value,
+      misura: document.getElementById('f-misura').value,
+      cliente: document.getElementById('f-cliente').value,
+      timestamp: new Date().toISOString(),
+      image: state.currentImage,
+    };
+
+    showResults(state.analysisResult);
+    saveToHistory(state.analysisResult);
+    if (usedModel) toast(`✅ Analisi completata (${usedModel})`, 'success');
+
+  } catch (err) {
+    console.error('[TireCheck] Errore finale:', err);
+    document.getElementById('ai-status').innerHTML = `
+      <div style="font-size:24px">⚠️</div>
+      <div class="ai-status-text" style="color:var(--danger)">
+        ${err.message}<br>
+        <small style="font-size:10px;color:var(--text3)">Apri F12 → Console per dettagli tecnici</small>
+      </div>`;
+    toast(err.message, 'error');
+  }
+}
+
+// ── MOSTRA RISULTATI ───────────────────────────
+function showResults(r) {
+  document.getElementById('ai-status').style.display = 'none';
+  const rc = document.getElementById('results-container');
+  rc.style.display = 'flex';
+  rc.style.flexDirection = 'column';
+  rc.style.gap = '16px';
+
+  document.getElementById('analysis-subtitle').textContent =
+    `${r.targa || 'Veicolo'} · ${r.posizione}`;
+
+  // esito badge
+  const map = {
+    'OK':         { cls: 'badge-ok',     ico: '✅', label: 'OK — Buone condizioni' },
+    'ATTENZIONE': { cls: 'badge-warn',   ico: '⚠️', label: 'Da monitorare' },
+    'SOSTITUIRE': { cls: 'badge-danger', ico: '🔴', label: 'Sostituzione necessaria' },
+  };
+  const m = map[r.esito] || map['ATTENZIONE'];
+  document.getElementById('esito-badge').innerHTML =
+    `<span class="badge ${m.cls}">${m.ico} ${r.esito}</span>`;
+  document.getElementById('esito-title').textContent = m.label;
+  document.getElementById('esito-title').style.color =
+    r.esito === 'OK' ? 'var(--ok)' : r.esito === 'ATTENZIONE' ? 'var(--warn)' : 'var(--danger)';
+
+  // metriche
+  const depth = r.profondita_mm ?? '?';
+  const depthEl = document.getElementById('m-depth');
+  depthEl.textContent = `${depth} mm`;
+  depthEl.className = 'metric-value ' + (depth >= 4 ? 'ok' : depth >= 2 ? 'warn' : 'danger');
+
+  const unifEl = document.getElementById('m-uniform');
+  unifEl.textContent = r.usura_uniforme ? 'Sì' : 'No';
+  unifEl.className = 'metric-value ' + (r.usura_uniforme ? 'ok' : 'warn');
+  document.getElementById('m-uniform-sub').textContent = r.tipo_usura || '';
+
+  const sideEl = document.getElementById('m-side');
+  sideEl.textContent = r.condizione_fianco || '—';
+  sideEl.className = 'metric-value ' + (r.condizione_fianco === 'OK' ? 'ok' : r.condizione_fianco === 'DANNEGGIATO' ? 'danger' : 'warn');
+  document.getElementById('m-side-sub').textContent = '';
+
+  const urgEl = document.getElementById('m-urgency');
+  urgEl.textContent = (r.urgenza || '—').charAt(0).toUpperCase() + (r.urgenza || '').slice(1);
+  urgEl.className = 'metric-value ' + (r.urgenza === 'bassa' ? 'ok' : r.urgenza === 'media' ? 'warn' : 'danger');
+  document.getElementById('m-urgency-sub').textContent = '';
+
+  // commento
+  document.getElementById('ai-comment').textContent = r.commento || '—';
+
+  // reset firma
+  clearSignature();
+  state.skipSignature = false;
+  document.getElementById('btn-skip-sign').textContent = 'Procedi senza firma';
+}
+
+// ── FIRMA DIGITALE ─────────────────────────────
+function initSignaturePad() {
+  const canvas = document.getElementById('signature-pad');
+  const ctx = canvas.getContext('2d');
+  state.signaturePad = ctx;
+
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const getPos = e => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (e.touches) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY,
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const start = e => {
+    e.preventDefault();
+    state.isDrawing = true;
+    const p = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    if (!state.hasDrawn) {
+      state.hasDrawn = true;
+      document.getElementById('sign-hint').classList.add('hidden');
+    }
+  };
+
+  const draw = e => {
+    e.preventDefault();
+    if (!state.isDrawing) return;
+    const p = getPos(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  };
+
+  const end = e => {
+    e.preventDefault();
+    state.isDrawing = false;
+    ctx.beginPath();
+    state.signatureData = canvas.toDataURL('image/png');
+  };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', end, { passive: false });
+}
+
+function clearSignature() {
+  const canvas = document.getElementById('signature-pad');
+  const ctx = state.signaturePad;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  state.hasDrawn = false;
+  state.signatureData = null;
+  document.getElementById('sign-hint').classList.remove('hidden');
+}
+
+function toggleSignatureRequired() {
+  state.skipSignature = !state.skipSignature;
+  const btn = document.getElementById('btn-skip-sign');
+  btn.textContent = state.skipSignature ? '✓ Firma non richiesta' : 'Procedi senza firma';
+}
+
+// ── GENERA PDF ─────────────────────────────────
+async function generatePDF() {
+  if (!state.analysisResult) { toast('Nessuna analisi disponibile', 'warn'); return; }
+  if (!state.hasDrawn && !state.skipSignature) {
+    toast('⚠️ Firma il documento o clicca "Procedi senza firma"', 'warn');
+    return;
+  }
+
+  const r = state.analysisResult;
+  const officina = ls(KEYS.officina) || 'Officina';
+  const tel = ls(KEYS.tel) || '';
+  const addr = ls(KEYS.addr) || '';
+  const piva = ls(KEYS.piva) || '';
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  const W = 210, M = 18;
+  let y = 0;
+
+  // ── sfondo header
+  doc.setFillColor(13, 13, 13);
+  doc.rect(0, 0, W, 42, 'F');
+
+  // logo placeholder (cerchio)
+  doc.setFillColor(232, 255, 71);
+  doc.circle(M + 8, 21, 8, 'F');
+  doc.setFillColor(13, 13, 13);
+  doc.circle(M + 8, 21, 3.5, 'F');
+
+  // testi header
+  doc.setTextColor(240, 240, 240);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('TireCheck Pro', M + 20, 19);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(136, 136, 136);
+  doc.text('Report Diagnosi Pneumatico · PezzaliApp', M + 20, 26);
+
+  // officina info destra
+  doc.setTextColor(200, 200, 200);
+  doc.setFontSize(8);
+  doc.text(officina, W - M, 16, { align: 'right' });
+  if (tel) doc.text(tel, W - M, 22, { align: 'right' });
+  if (addr) doc.text(addr, W - M, 28, { align: 'right' });
+  if (piva) doc.text(`P.IVA ${piva}`, W - M, 34, { align: 'right' });
+
+  y = 52;
+
+  // ── sezione dati veicolo
+  doc.setFillColor(26, 26, 26);
+  doc.roundedRect(M, y, W - M * 2, 36, 3, 3, 'F');
+
+  doc.setTextColor(136, 136, 136);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text('DATI VEICOLO', M + 6, y + 8);
+
+  doc.setTextColor(240, 240, 240);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text(r.targa || '—', M + 6, y + 18);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(r.posizione, M + 6, y + 26);
+
+  if (r.cliente) {
+    doc.setTextColor(200, 200, 200);
+    doc.text(r.cliente, M + 6, y + 32);
+  }
+
+  // marca + misura a destra
+  doc.setTextColor(136, 136, 136);
+  doc.setFontSize(7);
+  doc.text('PNEUMATICO', W - M - 6, y + 8, { align: 'right' });
+  doc.setTextColor(240, 240, 240);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(r.marca || '—', W - M - 6, y + 18, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(r.misura || '—', W - M - 6, y + 26, { align: 'right' });
+
+  // data/ora
+  const dt = new Date(r.timestamp);
+  const dateStr = dt.toLocaleDateString('it-IT') + ' ' + dt.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  doc.setTextColor(136, 136, 136);
+  doc.setFontSize(7);
+  doc.text(dateStr, W - M - 6, y + 32, { align: 'right' });
+
+  y += 44;
+
+  // ── ESITO principale
+  const esitoColor = r.esito === 'OK' ? [46, 213, 115] : r.esito === 'ATTENZIONE' ? [255, 165, 2] : [255, 71, 87];
+  doc.setFillColor(...esitoColor);
+  doc.roundedRect(M, y, W - M * 2, 18, 3, 3, 'F');
+  doc.setTextColor(r.esito === 'ATTENZIONE' ? 30 : 255, r.esito === 'ATTENZIONE' ? 30 : 255, r.esito === 'ATTENZIONE' ? 30 : 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text(`ESITO: ${r.esito}`, W / 2, y + 12, { align: 'center' });
+
+  y += 26;
+
+  // ── METRICHE griglia 2x2
+  const metrics = [
+    { label: 'Profondità stimata', value: `${r.profondita_mm ?? '?'} mm`, sub: 'min. legale 1.6mm' },
+    { label: 'Usura uniforme', value: r.usura_uniforme ? 'Sì' : 'No', sub: r.tipo_usura || '' },
+    { label: 'Condizione fianco', value: r.condizione_fianco || '—', sub: '' },
+    { label: 'Urgenza', value: (r.urgenza || '—').charAt(0).toUpperCase() + (r.urgenza || '').slice(1), sub: '' },
+  ];
+
+  const cellW = (W - M * 2 - 4) / 2;
+  const cellH = 22;
+  metrics.forEach((mt, i) => {
+    const cx = M + (i % 2) * (cellW + 4);
+    const cy = y + Math.floor(i / 2) * (cellH + 4);
+    doc.setFillColor(26, 26, 26);
+    doc.roundedRect(cx, cy, cellW, cellH, 2, 2, 'F');
+    doc.setTextColor(136, 136, 136);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text(mt.label.toUpperCase(), cx + 5, cy + 7);
+    doc.setTextColor(240, 240, 240);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(mt.value, cx + 5, cy + 15);
+    if (mt.sub) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 100, 100);
+      doc.text(mt.sub, cx + 5, cy + 20);
+    }
+  });
+
+  y += cellH * 2 + 12;
+
+  // ── VALUTAZIONE AI
+  doc.setFillColor(26, 26, 26);
+  const commentLines = doc.splitTextToSize(r.commento || '', W - M * 2 - 14);
+  const commentH = 14 + commentLines.length * 5;
+  doc.roundedRect(M, y, W - M * 2, commentH, 3, 3, 'F');
+  // bordo sinistro accent
+  doc.setFillColor(232, 255, 71);
+  doc.rect(M, y, 3, commentH, 'F');
+
+  doc.setTextColor(136, 136, 136);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text('VALUTAZIONE AI', M + 8, y + 8);
+  doc.setTextColor(200, 200, 200);
+  doc.setFontSize(9);
+  doc.text(commentLines, M + 8, y + 15);
+
+  y += commentH + 12;
+
+  // ── IMMAGINE PNEUMATICO
+  if (state.currentImage && y < 200) {
+    try {
+      const imgH = 45;
+      doc.setFillColor(26, 26, 26);
+      doc.roundedRect(M, y, W - M * 2, imgH + 6, 3, 3, 'F');
+      doc.addImage(state.currentImage, 'JPEG', M + 3, y + 3, (imgH * 4) / 3, imgH);
+    } catch(e) {}
+    y += 56;
+  }
+
+  // ── FIRMA
+  const signY = Math.max(y, 220);
+  doc.setDrawColor(50, 50, 50);
+  doc.setLineWidth(0.3);
+  doc.line(M, signY + 20, W / 2 - 10, signY + 20);
+  doc.setTextColor(136, 136, 136);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.text('FIRMA CLIENTE', M, signY + 25);
+
+  if (state.hasDrawn && state.signatureData) {
+    try {
+      doc.addImage(state.signatureData, 'PNG', M, signY, 70, 18);
+    } catch(e) {}
+  }
+
+  // footer
+  doc.setFillColor(13, 13, 13);
+  doc.rect(0, 285, W, 12, 'F');
+  doc.setTextColor(80, 80, 80);
+  doc.setFontSize(7);
+  doc.text('Generato da TireCheck Pro · PezzaliApp', W / 2, 291, { align: 'center' });
+
+  // salva
+  const filename = `TireCheck_${r.targa || 'report'}_${new Date().toISOString().slice(0,10)}.pdf`;
+  doc.save(filename);
+  toast('📄 PDF scaricato!', 'success');
+}
+
+// ── WEBHOOK MAKE.COM ───────────────────────────
+async function sendWebhook() {
+  const url = ls(KEYS.webhook);
+  if (!url) {
+    toast('⚠️ Configura il webhook Make.com nelle impostazioni', 'warn');
+    return;
+  }
+  if (!state.analysisResult) {
+    toast('Nessuna analisi da inviare', 'warn');
+    return;
+  }
+
+  const payload = {
+    source: 'TireCheck Pro',
+    timestamp: new Date().toISOString(),
+    officina: ls(KEYS.officina) || '',
+    targa: state.analysisResult.targa,
+    posizione: state.analysisResult.posizione,
+    cliente: state.analysisResult.cliente,
+    marca: state.analysisResult.marca,
+    misura: state.analysisResult.misura,
+    esito: state.analysisResult.esito,
+    profondita_mm: state.analysisResult.profondita_mm,
+    usura_uniforme: state.analysisResult.usura_uniforme,
+    tipo_usura: state.analysisResult.tipo_usura,
+    condizione_fianco: state.analysisResult.condizione_fianco,
+    urgenza: state.analysisResult.urgenza,
+    commento: state.analysisResult.commento,
+    firma_cliente: state.hasDrawn ? 'presente' : 'assente',
+  };
+
+  try {
+    toast('📡 Invio in corso…', 'warn');
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      toast('✅ Dati inviati a Make.com!', 'success');
+    } else {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  } catch (e) {
+    toast(`Errore webhook: ${e.message}`, 'error');
+  }
+}
+
+// ── STORICO ────────────────────────────────────
+function saveToHistory(r) {
+  const history = getHistory();
+  history.unshift({ ...r, id: Date.now() });
+  // max 50 voci
+  if (history.length > 50) history.pop();
+  localStorage.setItem(KEYS.history, JSON.stringify(history));
+}
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(KEYS.history) || '[]'); }
+  catch { return []; }
+}
+
+function loadHistory() {
+  const history = getHistory();
+  const list = document.getElementById('history-list');
+  const count = document.getElementById('history-count');
+  count.textContent = `${history.length} analisi`;
+
+  if (!history.length) {
+    list.innerHTML = `
+      <div class="history-empty">
+        <div class="ico">📋</div>
+        <p>Nessuna analisi salvata</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = history.map(r => {
+    const esitoMap = { OK: '✅', ATTENZIONE: '⚠️', SOSTITUIRE: '🔴' };
+    const dt = new Date(r.timestamp).toLocaleDateString('it-IT') + ' ' +
+               new Date(r.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="history-item" onclick="openDetail(${r.id})">
+        ${r.image ? `<img class="history-thumb" src="${r.image}" alt="gomma">` : '<div class="history-thumb"></div>'}
+        <div class="history-info">
+          <div class="history-plate">${r.targa || 'N/D'} · ${r.posizione}</div>
+          <div class="history-meta">${esitoMap[r.esito] || ''} ${r.esito} · ${dt}</div>
+          ${r.cliente ? `<div class="history-meta" style="color:var(--text3)">${r.cliente}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openDetail(id) {
+  const r = getHistory().find(h => h.id === id);
+  if (!r) return;
+
+  const esitoColor = r.esito === 'OK' ? 'var(--ok)' : r.esito === 'ATTENZIONE' ? 'var(--warn)' : 'var(--danger)';
+  const dt = new Date(r.timestamp).toLocaleString('it-IT');
+
+  document.getElementById('detail-content').innerHTML = `
+    ${r.image ? `<img src="${r.image}" style="width:100%;border-radius:var(--r);object-fit:cover;aspect-ratio:16/9">` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+      <div>
+        <div style="font-size:18px;font-weight:800">${r.targa || 'N/D'}</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text2)">${r.posizione} · ${r.marca || ''} ${r.misura || ''}</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3)">${dt}</div>
+      </div>
+      <div style="font-size:24px;font-weight:900;color:${esitoColor}">${r.esito}</div>
+    </div>
+    <div style="margin-top:12px;background:var(--bg);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:13px;color:var(--text2);line-height:1.6">
+      ${r.commento || ''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px">
+        <div style="font-family:var(--font-mono);font-size:8px;color:var(--text2);text-transform:uppercase">Profondità</div>
+        <div style="font-weight:700;margin-top:2px">${r.profondita_mm ?? '?'} mm</div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px">
+        <div style="font-family:var(--font-mono);font-size:8px;color:var(--text2);text-transform:uppercase">Urgenza</div>
+        <div style="font-weight:700;margin-top:2px">${r.urgenza || '—'}</div>
+      </div>
+    </div>
+    <button class="btn btn-danger btn-sm" onclick="deleteFromHistory(${r.id})" style="margin-top:12px;width:100%">🗑️ Elimina questa voce</button>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function deleteFromHistory(id) {
+  const history = getHistory().filter(h => h.id !== id);
+  localStorage.setItem(KEYS.history, JSON.stringify(history));
+  document.getElementById('detail-modal').classList.remove('open');
+  loadHistory();
+  toast('Voce eliminata', 'success');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('detail-modal')) {
+    document.getElementById('detail-modal').classList.remove('open');
+  }
+}
+
+// ── IMPOSTAZIONI ───────────────────────────────
+function loadSettings() {
+  document.getElementById('s-gemini-key').value = ls(KEYS.gemini) || '';
+  document.getElementById('s-webhook').value = ls(KEYS.webhook) || '';
+  document.getElementById('s-officina').value = ls(KEYS.officina) || '';
+  document.getElementById('s-tel').value = ls(KEYS.tel) || '';
+  document.getElementById('s-addr').value = ls(KEYS.addr) || '';
+  document.getElementById('s-piva').value = ls(KEYS.piva) || '';
+}
+
+function saveSettings() {
+  const key = document.getElementById('s-gemini-key').value.trim();
+  if (key) localStorage.setItem(KEYS.gemini, key);
+  const wh = document.getElementById('s-webhook').value.trim();
+  if (wh) localStorage.setItem(KEYS.webhook, wh);
+  localStorage.setItem(KEYS.officina, document.getElementById('s-officina').value.trim());
+  localStorage.setItem(KEYS.tel, document.getElementById('s-tel').value.trim());
+  localStorage.setItem(KEYS.addr, document.getElementById('s-addr').value.trim());
+  localStorage.setItem(KEYS.piva, document.getElementById('s-piva').value.trim());
+  toast('✅ Impostazioni salvate', 'success');
+}
+
+function clearHistory() {
+  if (!confirm('Eliminare tutto lo storico analisi?')) return;
+  localStorage.removeItem(KEYS.history);
+  loadHistory();
+  toast('Storico eliminato', 'success');
+}
+
+// ── NUOVA SCANSIONE ────────────────────────────
+function newScan() {
+  state.currentImage = null;
+  state.currentImageFile = null;
+  state.analysisResult = null;
+  state.signatureData = null;
+  state.hasDrawn = false;
+  state.skipSignature = false;
+
+  document.getElementById('preview-img').style.display = 'none';
+  document.getElementById('cam-placeholder').style.display = 'flex';
+  document.getElementById('btn-analyze').disabled = true;
+  document.getElementById('f-targa').value = '';
+  document.getElementById('f-cliente').value = '';
+
+  goScreen('scan');
+  updateNav('scan');
+}
+
+// ── ONBOARDING ─────────────────────────────────
+function closeOnboarding() {
+  document.getElementById('onboarding-modal').classList.remove('open');
+  goScreen('settings');
+  loadSettings();
+}
+
+// ── TOAST ──────────────────────────────────────
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ` ${type}` : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+// ── UTILITY ────────────────────────────────────
+function ls(key) { return localStorage.getItem(key); }
+</script>
 </body>
 </html>
